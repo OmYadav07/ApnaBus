@@ -1,0 +1,249 @@
+import { useState, useEffect } from 'react';
+import { apiCall } from '../../utils/supabase';
+import { toast } from 'sonner';
+import { ArrowLeft, Check, X } from 'lucide-react';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+
+interface SeatSelectionProps {
+  bus: any;
+  profile: any;
+  onBack: () => void;
+}
+
+export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
+  const [bookedSeats, setBookedSeats] = useState<number[]>([]);
+  const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState(false);
+  const [journeyDate, setJourneyDate] = useState(new Date().toISOString().split('T')[0]);
+  const [passengerName, setPassengerName] = useState(profile.name || '');
+  const [passengerPhone, setPassengerPhone] = useState(profile.phone || '');
+
+  useEffect(() => {
+    fetchSeats();
+  }, []);
+
+  const fetchSeats = async () => {
+    try {
+      const data = await apiCall(`/buses/${bus.id}/seats`);
+      setBookedSeats(data.booked_seats || []);
+    } catch (error) {
+      toast.error('Failed to load seats');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSeat = (seatNumber: number) => {
+    if (bookedSeats.includes(seatNumber)) return;
+    
+    setSelectedSeats(prev =>
+      prev.includes(seatNumber)
+        ? prev.filter(s => s !== seatNumber)
+        : [...prev, seatNumber]
+    );
+  };
+
+  const handleBooking = async () => {
+    if (selectedSeats.length === 0) {
+      toast.error('Please select at least one seat');
+      return;
+    }
+
+    const totalAmount = bus.price * selectedSeats.length;
+    if (profile.wallet_balance < totalAmount) {
+      toast.error('Insufficient wallet balance. Please add money to your wallet.');
+      return;
+    }
+
+    setBooking(true);
+    try {
+      await apiCall('/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          bus_id: bus.id,
+          seats: selectedSeats,
+          journey_date: journeyDate,
+          passenger_details: {
+            name: passengerName,
+            phone: passengerPhone
+          }
+        }),
+      });
+
+      toast.success('Booking successful!');
+      onBack();
+    } catch (error: any) {
+      toast.error(error.message || 'Booking failed');
+    } finally {
+      setBooking(false);
+    }
+  };
+
+  const renderSeats = () => {
+    const rows = Math.ceil(bus.total_seats / 4);
+    const seats = [];
+
+    for (let row = 0; row < rows; row++) {
+      const rowSeats = [];
+      for (let col = 0; col < 4; col++) {
+        const seatNumber = row * 4 + col + 1;
+        if (seatNumber > bus.total_seats) break;
+
+        const isBooked = bookedSeats.includes(seatNumber);
+        const isSelected = selectedSeats.includes(seatNumber);
+
+        rowSeats.push(
+          <button
+            key={seatNumber}
+            onClick={() => toggleSeat(seatNumber)}
+            disabled={isBooked}
+            className={`
+              w-12 h-12 rounded-lg font-semibold text-sm transition-all
+              ${isBooked ? 'bg-red-100 text-red-400 cursor-not-allowed' : ''}
+              ${isSelected ? 'bg-green-500 text-white shadow-lg scale-105' : ''}
+              ${!isBooked && !isSelected ? 'bg-gray-100 hover:bg-blue-100 text-gray-700' : ''}
+            `}
+          >
+            {seatNumber}
+          </button>
+        );
+
+        if (col === 1) {
+          rowSeats.push(<div key={`gap-${row}`} className="w-8" />);
+        }
+      }
+
+      seats.push(
+        <div key={row} className="flex items-center justify-center space-x-2">
+          {rowSeats}
+        </div>
+      );
+    }
+
+    return seats;
+  };
+
+  return (
+    <div className="space-y-6">
+      <Button variant="outline" onClick={onBack} className="mb-4">
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Search
+      </Button>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Seat Layout */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Your Seats</CardTitle>
+              <p className="text-sm text-gray-600">{bus.name} - {bus.source} to {bus.destination}</p>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                </div>
+              ) : (
+                <div>
+                  {/* Legend */}
+                  <div className="flex items-center justify-center space-x-6 mb-6 pb-4 border-b">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-gray-100 rounded"></div>
+                      <span className="text-sm text-gray-600">Available</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-green-500 rounded"></div>
+                      <span className="text-sm text-gray-600">Selected</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-red-100 rounded"></div>
+                      <span className="text-sm text-gray-600">Booked</span>
+                    </div>
+                  </div>
+
+                  {/* Seats Grid */}
+                  <div className="space-y-3 bg-gradient-to-b from-blue-50 to-white p-6 rounded-lg">
+                    <div className="text-center mb-4 pb-2 border-b">
+                      <span className="text-sm font-medium text-gray-500">Driver</span>
+                    </div>
+                    {renderSeats()}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Booking Summary */}
+        <div>
+          <Card className="sticky top-4">
+            <CardHeader>
+              <CardTitle>Booking Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Journey Date</Label>
+                <Input
+                  type="date"
+                  value={journeyDate}
+                  onChange={(e) => setJourneyDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+
+              <div>
+                <Label>Passenger Name</Label>
+                <Input
+                  value={passengerName}
+                  onChange={(e) => setPassengerName(e.target.value)}
+                  placeholder="Enter name"
+                />
+              </div>
+
+              <div>
+                <Label>Phone Number</Label>
+                <Input
+                  value={passengerPhone}
+                  onChange={(e) => setPassengerPhone(e.target.value)}
+                  placeholder="Enter phone"
+                />
+              </div>
+
+              <div className="pt-4 border-t space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Selected Seats:</span>
+                  <span className="font-medium">
+                    {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Price per seat:</span>
+                  <span className="font-medium">₹{bus.price}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                  <span>Total Amount:</span>
+                  <span className="text-blue-600">₹{bus.price * selectedSeats.length}</span>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Wallet Balance: ₹{profile.wallet_balance?.toFixed(2)}
+                </div>
+              </div>
+
+              <Button
+                onClick={handleBooking}
+                disabled={booking || selectedSeats.length === 0}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                {booking ? 'Booking...' : 'Confirm Booking'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
