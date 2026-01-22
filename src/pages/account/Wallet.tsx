@@ -1,13 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Wallet as WalletIcon, Plus, ArrowUpRight, ArrowDownLeft, CreditCard } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface WalletProps {
   profile?: any;
 }
 
 const Wallet = ({ profile }: WalletProps) => {
+  const [isActivating, setIsActivating] = useState(false);
   const transactions = profile?.transactions || [];
   const balance = profile?.wallet_balance || 0;
+  const isWalletActive = profile?.is_wallet_active ?? false;
+
+  const handleActivateWallet = async () => {
+    setIsActivating(true);
+    try {
+      const response = await fetch(
+        `https://zmgisuigirhxbygitpdy.supabase.co/functions/v1/make-server-f9d0e288/activate-wallet`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          }
+        }
+      );
+      if (!response.ok) throw new Error('Failed to activate wallet');
+      toast.success('Wallet activated! ₹100 welcome bonus added.');
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to activate wallet');
+    } finally {
+      setIsActivating(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -16,19 +43,31 @@ const Wallet = ({ profile }: WalletProps) => {
           <div className="flex justify-between items-start mb-8">
             <div>
               <p className="text-blue-100 mb-1">Available Balance</p>
-              <h2 className="text-4xl font-bold">₹{balance.toLocaleString('en-IN')}.00</h2>
+              <h2 className="text-4xl font-bold">₹{isWalletActive ? balance.toLocaleString('en-IN') : "100"}.00</h2>
             </div>
             <WalletIcon className="w-12 h-12 text-blue-200 opacity-50" />
           </div>
           <div className="flex space-x-4">
-            <button className="flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors">
-              <Plus className="w-5 h-5" />
-              <span>Add Money</span>
-            </button>
-            <button className="flex items-center space-x-2 bg-blue-500 bg-opacity-30 text-white px-6 py-3 rounded-xl font-semibold hover:bg-opacity-40 transition-colors border border-white border-opacity-20">
-              <CreditCard className="w-5 h-5" />
-              <span>Cards</span>
-            </button>
+            {isWalletActive ? (
+              <>
+                <button className="flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors">
+                  <Plus className="w-5 h-5" />
+                  <span>Add Money</span>
+                </button>
+                <button className="flex items-center space-x-2 bg-blue-500 bg-opacity-30 text-white px-6 py-3 rounded-xl font-semibold hover:bg-opacity-40 transition-colors border border-white border-opacity-20">
+                  <CreditCard className="w-5 h-5" />
+                  <span>Cards</span>
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={handleActivateWallet}
+                disabled={isActivating}
+                className="flex items-center space-x-2 bg-white text-blue-600 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50"
+              >
+                {isActivating ? 'Activating...' : 'Activate Wallet & Claim ₹100'}
+              </button>
+            )}
           </div>
         </div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
