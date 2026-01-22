@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Bus, MapPin, Calendar, Shield, Clock, Headphones, Star, Users, CheckCircle, Menu, X, User, LogOut, ChevronDown, Wallet, History, XCircle, RefreshCw, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -13,7 +14,8 @@ interface HomePageProps {
   onLogout: () => void;
 }
 
-export function HomePage({ isLoggedIn, profile, onNavigateToLogin, onNavigateToSignup, onNavigateToDashboard, onLogout }: HomePageProps) {
+export function HomePage({ isLoggedIn, profile, onLogout }: HomePageProps) {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -29,12 +31,11 @@ export function HomePage({ isLoggedIn, profile, onNavigateToLogin, onNavigateToS
         description: 'You need to be logged in to access the booking system',
         action: {
           label: 'Login',
-          onClick: () => onNavigateToLogin()
+          onClick: () => navigate('/login')
         }
       });
     } else {
-      // Navigate to booking/user dashboard
-      onNavigateToDashboard();
+      navigate('/dashboard');
     }
   };
 
@@ -49,14 +50,21 @@ export function HomePage({ isLoggedIn, profile, onNavigateToLogin, onNavigateToS
         description: 'You need to be logged in to search and book buses',
         action: {
           label: 'Login',
-          onClick: () => onNavigateToLogin()
+          onClick: () => navigate('/login')
         }
       });
     } else {
-      // Navigate to dashboard with search params
-      onNavigateToDashboard();
+      navigate('/dashboard');
     }
   };
+
+  const navLinks = [
+    { to: "/account/profile", icon: User, label: "Profile", color: "text-blue-600", bg: "hover:bg-blue-50" },
+    { to: "/account/wallet", icon: Wallet, label: "Wallet", color: "text-green-600", bg: "hover:bg-green-50" },
+    { to: "/account/bookings", icon: History, label: "Booking History", color: "text-purple-600", bg: "hover:bg-purple-50" },
+    { to: "/account/cancel", icon: XCircle, label: "Cancel Ticket", color: "text-orange-600", bg: "hover:bg-orange-50" },
+    { to: "/account/reschedule", icon: RefreshCw, label: "Reschedule Ticket", color: "text-indigo-600", bg: "hover:bg-indigo-50" },
+  ];
 
   const features = [
     {
@@ -171,102 +179,68 @@ export function HomePage({ isLoggedIn, profile, onNavigateToLogin, onNavigateToS
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden"
+                        className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
                       >
-                        <div className="p-4 border-b border-gray-100">
-                          <p className="font-semibold text-gray-900">{profile?.name}</p>
-                          <p className="text-sm text-gray-500">{profile?.email}</p>
+                        <div className="p-5 border-b border-gray-50 bg-gray-50/50">
+                          <p className="font-bold text-gray-900 leading-tight">{profile?.name || 'Guest User'}</p>
+                          <p className="text-xs text-gray-500 mt-1 truncate">{profile?.email}</p>
                         </div>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            onNavigateToDashboard();
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors flex items-center space-x-2"
-                        >
-                          <User className="w-4 h-4 text-blue-600" />
-                          <span>Profile</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            onNavigateToDashboard();
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-green-50 transition-colors flex items-center space-x-2"
-                        >
-                          <Wallet className="w-4 h-4 text-green-600" />
-                          <span>Wallet</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            onNavigateToDashboard();
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-purple-50 transition-colors flex items-center space-x-2"
-                        >
-                          <History className="w-4 h-4 text-purple-600" />
-                          <span>Booking History</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            onNavigateToDashboard();
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors flex items-center space-x-2"
-                        >
-                          <XCircle className="w-4 h-4 text-orange-600" />
-                          <span>Cancel Ticket</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            onNavigateToDashboard();
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors flex items-center space-x-2"
-                        >
-                          <RefreshCw className="w-4 h-4 text-indigo-600" />
-                          <span>Reschedule Ticket</span>
-                        </button>
-                        <div className="border-t border-gray-100"></div>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            setSettingsOpen(true);
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-2"
-                        >
-                          <Settings className="w-4 h-4 text-gray-600" />
-                          <span>Settings</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            onLogout();
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center space-x-2 text-red-600"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          <span>Logout</span>
-                        </button>
+                        
+                        <div className="py-2">
+                          {navLinks.map((link) => (
+                            <Link
+                              key={link.to}
+                              to={link.to}
+                              onClick={() => setUserMenuOpen(false)}
+                              className={`w-full px-5 py-3 text-left ${link.bg} transition-colors flex items-center space-x-3 text-gray-700 font-medium`}
+                            >
+                              <link.icon className={`w-4 h-4 ${link.color}`} />
+                              <span className="text-sm">{link.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+
+                        <div className="border-t border-gray-50 py-2">
+                          <button
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              setSettingsOpen(true);
+                            }}
+                            className="w-full px-5 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 text-gray-600 font-medium"
+                          >
+                            <Settings className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm">Settings</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              onLogout();
+                            }}
+                            className="w-full px-5 py-3 text-left hover:bg-red-50 transition-colors flex items-center space-x-3 text-red-600 font-bold"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span className="text-sm">Logout</span>
+                          </button>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
               ) : (
-                <>
-                  <button
-                    onClick={onNavigateToLogin}
-                    className="text-blue-600 hover:text-blue-700 transition-colors font-medium"
+                <div className="flex items-center space-x-4">
+                  <Link
+                    to="/login"
+                    className="text-gray-600 hover:text-blue-600 font-bold transition-colors"
                   >
                     Login
-                  </button>
-                  <button
-                    onClick={onNavigateToSignup}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all font-medium"
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg hover:shadow-blue-200 transition-all font-bold"
                   >
                     Sign Up
-                  </button>
-                </>
+                  </Link>
+                </div>
               )}
             </div>
 

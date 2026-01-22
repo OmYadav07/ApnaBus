@@ -1,53 +1,44 @@
 import { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "../utils/supabase";
 import { HomePage } from "./components/HomePage";
 import { Login } from "./components/Login";
 import { Signup } from "./components/Signup";
 import { UserDashboard } from "./components/UserDashboard";
 import { AdminDashboard } from "./components/AdminDashboard";
+import AccountLayout from "../pages/account/AccountLayout";
+import Profile from "../pages/account/Profile";
+import Wallet from "../pages/account/Wallet";
+import BookingHistory from "../pages/account/BookingHistory";
+import CancelTicket from "../pages/account/CancelTicket";
+import RescheduleTicket from "../pages/account/RescheduleTicket";
 import { Toaster, toast } from "sonner";
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"home" | "login" | "signup" | "dashboard">(
-    "home",
-  );
 
   useEffect(() => {
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        localStorage.setItem(
-          "access_token",
-          session.access_token,
-        );
+        localStorage.setItem("access_token", session.access_token);
         fetchProfile();
       } else {
         setLoading(false);
       }
     });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
-        localStorage.setItem(
-          "access_token",
-          session.access_token,
-        );
+        localStorage.setItem("access_token", session.access_token);
         fetchProfile();
-        // After successful login, redirect to home
-        setView("home");
       } else {
         localStorage.removeItem("access_token");
         setProfile(null);
         setLoading(false);
-        setView("home");
       }
     });
 
@@ -79,7 +70,6 @@ export default function App() {
     localStorage.removeItem("access_token");
     setSession(null);
     setProfile(null);
-    setView("home");
     toast.success("Logged out successfully");
   };
 
@@ -95,41 +85,45 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Toaster position="top-right" richColors />
-      
-      {view === "home" ? (
-        <HomePage
-          isLoggedIn={!!session}
-          profile={profile}
-          onNavigateToLogin={() => setView("login")}
-          onNavigateToSignup={() => setView("signup")}
-          onNavigateToDashboard={() => setView("dashboard")}
-          onLogout={handleLogout}
-        />
-      ) : view === "login" ? (
-        <Login
-          onSwitch={() => setView("signup")}
-          onBack={() => setView("home")}
-        />
-      ) : view === "signup" ? (
-        <Signup
-          onSwitch={() => setView("login")}
-          onBack={() => setView("home")}
-        />
-      ) : view === "dashboard" ? (
-        profile?.role === "admin" ? (
-          <AdminDashboard
-            profile={profile}
-            onLogout={handleLogout}
-          />
-        ) : (
-          <UserDashboard
-            profile={profile}
-            onLogout={handleLogout}
-          />
-        )
-      ) : null}
-    </div>
+    <BrowserRouter>
+      <div className="min-h-screen">
+        <Toaster position="top-right" richColors />
+        <Routes>
+          <Route path="/" element={
+            <HomePage
+              isLoggedIn={!!session}
+              profile={profile}
+              onNavigateToLogin={() => {}} // Controlled by Router Link now
+              onNavigateToSignup={() => {}}
+              onNavigateToDashboard={() => {}}
+              onLogout={handleLogout}
+            />
+          } />
+          <Route path="/login" element={<Login onSwitch={() => {}} onBack={() => {}} />} />
+          <Route path="/signup" element={<Signup onSwitch={() => {}} onBack={() => {}} />} />
+          
+          <Route path="/account" element={
+            session ? <AccountLayout /> : <Navigate to="/login" />
+          }>
+            <Route index element={<Navigate to="/account/profile" />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="wallet" element={<Wallet />} />
+            <Route path="bookings" element={<BookingHistory />} />
+            <Route path="cancel" element={<CancelTicket />} />
+            <Route path="reschedule" element={<RescheduleTicket />} />
+          </Route>
+
+          <Route path="/dashboard" element={
+            session ? (
+              profile?.role === "admin" ? (
+                <AdminDashboard profile={profile} onLogout={handleLogout} />
+              ) : (
+                <UserDashboard profile={profile} onLogout={handleLogout} />
+              )
+            ) : <Navigate to="/login" />
+          } />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
