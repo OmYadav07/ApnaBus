@@ -15,22 +15,33 @@ const Wallet = ({ profile }: WalletProps) => {
   const handleActivateWallet = async () => {
     setIsActivating(true);
     try {
+      const token = localStorage.getItem("access_token");
+      if (!token) throw new Error('You must be logged in to activate wallet');
+
+      // First check if user exists in backend, if not we might need to signup/profile first
+      // But for activation we'll just try the endpoint directly with proper error handling
       const response = await fetch(
         `https://zmgisuigirhxbygitpdy.supabase.co/functions/v1/make-server-f9d0e288/activate-wallet`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem("access_token")}`,
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({})
         }
       );
       
-      const data = await response.json();
+      let data;
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        data = { error: text || 'Server error' };
+      }
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to activate wallet');
+        throw new Error(data.error || data.message || 'Failed to activate wallet');
       }
 
       toast.success('Wallet activated! ₹100 welcome bonus added.');
