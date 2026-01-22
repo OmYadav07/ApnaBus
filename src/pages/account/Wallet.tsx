@@ -6,11 +6,8 @@ interface WalletProps {
 }
 
 const Wallet = ({ profile }: WalletProps) => {
-  const transactions = [
-    { id: 1, title: "Ticket Booking - DEL to MUM", amount: -1250, date: "22 Jan 2024", type: "debit" },
-    { id: 2, title: "Added Money to Wallet", amount: 2000, date: "20 Jan 2024", type: "credit" },
-    { id: 3, title: "Ticket Cancellation Refund", amount: 850, date: "15 Jan 2024", type: "credit" },
-  ];
+  const transactions = profile?.transactions || [];
+  const balance = profile?.wallet_balance || 0;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -19,7 +16,7 @@ const Wallet = ({ profile }: WalletProps) => {
           <div className="flex justify-between items-start mb-8">
             <div>
               <p className="text-blue-100 mb-1">Available Balance</p>
-              <h2 className="text-4xl font-bold">₹2,450.00</h2>
+              <h2 className="text-4xl font-bold">₹{balance.toLocaleString('en-IN')}.00</h2>
             </div>
             <WalletIcon className="w-12 h-12 text-blue-200 opacity-50" />
           </div>
@@ -44,22 +41,29 @@ const Wallet = ({ profile }: WalletProps) => {
           <button className="text-blue-600 font-medium text-sm hover:underline">View All</button>
         </div>
         <div className="divide-y divide-gray-50">
-          {transactions.map((tx) => (
-            <div key={tx.id} className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-xl ${tx.type === 'credit' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                  {tx.type === 'credit' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+          {transactions.length > 0 ? (
+            transactions.map((tx: any) => (
+              <div key={tx.id} className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div className="flex items-center space-x-4">
+                  <div className={`p-3 rounded-xl ${tx.type === 'credit' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                    {tx.type === 'credit' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{tx.title}</p>
+                    <p className="text-sm text-gray-500">{new Date(tx.created_at).toLocaleDateString()}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900">{tx.title}</p>
-                  <p className="text-sm text-gray-500">{tx.date}</p>
-                </div>
+                <p className={`font-bold text-lg ${tx.type === 'credit' ? 'text-green-600' : 'text-gray-900'}`}>
+                  {tx.type === 'credit' ? '+' : '-'}₹{Math.abs(tx.amount)}
+                </p>
               </div>
-              <p className={`font-bold text-lg ${tx.type === 'credit' ? 'text-green-600' : 'text-gray-900'}`}>
-                {tx.type === 'credit' ? '+' : '-'}₹{Math.abs(tx.amount)}
-              </p>
+            ))
+          ) : (
+            <div className="p-12 text-center">
+              <WalletIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No transactions yet</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
