@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, MapPin, Edit2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '../../utils/supabase';
 
 interface ProfileProps {
   profile?: any;
@@ -27,13 +28,16 @@ const Profile = ({ profile }: ProfileProps) => {
   const handleSave = async () => {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || localStorage.getItem("access_token");
+      
       const response = await fetch(
         `https://zmgisuigirhxbygitpdy.supabase.co/functions/v1/make-server-f9d0e288/profile`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(formData)
         }

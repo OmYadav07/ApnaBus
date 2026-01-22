@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Wallet as WalletIcon, Plus, ArrowUpRight, ArrowDownLeft, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '../../utils/supabase';
 
 interface WalletProps {
   profile?: any;
@@ -15,11 +16,11 @@ const Wallet = ({ profile }: WalletProps) => {
   const handleActivateWallet = async () => {
     setIsActivating(true);
     try {
-      const token = localStorage.getItem("access_token");
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || localStorage.getItem("access_token");
+      
       if (!token) throw new Error('You must be logged in to activate wallet');
 
-      // First check if user exists in backend, if not we might need to signup/profile first
-      // But for activation we'll just try the endpoint directly with proper error handling
       const response = await fetch(
         `https://zmgisuigirhxbygitpdy.supabase.co/functions/v1/make-server-f9d0e288/activate-wallet`,
         {
