@@ -103,14 +103,14 @@ export default function App() {
           <Route path="/signup" element={<Signup onSwitch={() => {}} onBack={() => {}} />} />
           
           <Route path="/account" element={
-            session ? <AccountLayout /> : <Navigate to="/login" />
+            session ? <AccountLayout profile={profile} /> : <Navigate to="/login" />
           }>
             <Route index element={<Navigate to="/account/profile" />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="wallet" element={<Wallet />} />
-            <Route path="bookings" element={<BookingHistory />} />
-            <Route path="cancel" element={<CancelTicket />} />
-            <Route path="reschedule" element={<RescheduleTicket />} />
+            <Route path="profile" element={<Profile profile={profile} />} />
+            <Route path="wallet" element={<Wallet profile={profile} />} />
+            <Route path="bookings" element={<BookingHistory profile={profile} />} />
+            <Route path="cancel" element={<CancelTicket profile={profile} />} />
+            <Route path="reschedule" element={<RescheduleTicket profile={profile} />} />
           </Route>
 
           <Route path="/dashboard" element={

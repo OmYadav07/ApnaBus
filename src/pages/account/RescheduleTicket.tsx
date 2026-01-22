@@ -1,7 +1,11 @@
 import React from 'react';
 import { RefreshCw, Calendar, Search, ArrowRight } from 'lucide-react';
 
-const RescheduleTicket = () => {
+interface RescheduleTicketProps {
+  profile?: any;
+}
+
+const RescheduleTicket = ({ profile }: RescheduleTicketProps) => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center">

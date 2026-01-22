@@ -1,7 +1,11 @@
 import React from 'react';
 import { XCircle, AlertCircle, Search } from 'lucide-react';
 
-const CancelTicket = () => {
+interface CancelTicketProps {
+  profile?: any;
+}
+
+const CancelTicket = ({ profile }: CancelTicketProps) => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center">

@@ -1,7 +1,11 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { User, Wallet, History, XCircle, RefreshCw, ChevronLeft } from 'lucide-react';
 
-const AccountLayout = () => {
+interface AccountLayoutProps {
+  profile?: any;
+}
+
+const AccountLayout = ({ profile }: AccountLayoutProps) => {
   const navigate = useNavigate();
 
   const navItems = [

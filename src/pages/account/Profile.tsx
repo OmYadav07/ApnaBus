@@ -1,12 +1,16 @@
 import React from 'react';
 import { User, Mail, Phone, MapPin, Edit2 } from 'lucide-react';
 
-const Profile = () => {
+interface ProfileProps {
+  profile?: any;
+}
+
+const Profile = ({ profile }: ProfileProps) => {
   const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+91 9876543210",
-    address: "New Delhi, India"
+    name: profile?.name || "Guest User",
+    email: profile?.email || "No email provided",
+    phone: profile?.phone || "Not provided",
+    address: profile?.address || "Not provided"
   };
 
   return (

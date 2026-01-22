@@ -1,7 +1,11 @@
 import React from 'react';
 import { Wallet as WalletIcon, Plus, ArrowUpRight, ArrowDownLeft, CreditCard } from 'lucide-react';
 
-const Wallet = () => {
+interface WalletProps {
+  profile?: any;
+}
+
+const Wallet = ({ profile }: WalletProps) => {
   const transactions = [
     { id: 1, title: "Ticket Booking - DEL to MUM", amount: -1250, date: "22 Jan 2024", type: "debit" },
     { id: 2, title: "Added Money to Wallet", amount: 2000, date: "20 Jan 2024", type: "credit" },

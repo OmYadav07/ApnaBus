@@ -1,7 +1,11 @@
 import React from 'react';
 import { Bus, MapPin, Calendar, Clock, ChevronRight } from 'lucide-react';
 
-const BookingHistory = () => {
+interface BookingHistoryProps {
+  profile?: any;
+}
+
+const BookingHistory = ({ profile }: BookingHistoryProps) => {
   const bookings = [
     {
       id: "BUS123456",
