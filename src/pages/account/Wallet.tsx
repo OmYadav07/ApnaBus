@@ -21,16 +21,23 @@ const Wallet = ({ profile }: WalletProps) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          }
+            'Authorization': `Bearer ${localStorage.getItem("access_token")}`,
+          },
+          body: JSON.stringify({})
         }
       );
-      if (!response.ok) throw new Error('Failed to activate wallet');
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to activate wallet');
+      }
+
       toast.success('Wallet activated! ₹100 welcome bonus added.');
       window.location.reload();
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to activate wallet');
+    } catch (error: any) {
+      console.error('Wallet activation error:', error);
+      toast.error(error.message || 'Failed to activate wallet');
     } finally {
       setIsActivating(false);
     }
@@ -43,7 +50,7 @@ const Wallet = ({ profile }: WalletProps) => {
           <div className="flex justify-between items-start mb-8">
             <div>
               <p className="text-blue-100 mb-1">Available Balance</p>
-              <h2 className="text-4xl font-bold">₹{isWalletActive ? balance.toLocaleString('en-IN') : "100"}.00</h2>
+              <h2 className="text-4xl font-bold">₹{isWalletActive ? balance.toLocaleString('en-IN') : "00"}.00</h2>
             </div>
             <WalletIcon className="w-12 h-12 text-blue-200 opacity-50" />
           </div>
