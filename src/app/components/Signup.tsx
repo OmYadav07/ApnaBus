@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Bus, Mail, Lock, User, Phone, ArrowLeft, Sparkles, CheckCircle, Shield, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -9,11 +10,12 @@ import { apiCall } from '../../utils/supabase';
 import { supabase } from '../../utils/supabase';
 
 interface SignupProps {
-  onSwitch: () => void;
+  onSwitch?: () => void;
   onBack?: () => void;
 }
 
 export function Signup({ onSwitch, onBack }: SignupProps) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -154,15 +156,13 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
             className="hidden md:block"
           >
             {/* Back Button */}
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="mb-8 flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                Back to Home
-              </button>
-            )}
+            <button
+              onClick={() => navigate('/')}
+              className="mb-8 flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+              Back to Home
+            </button>
 
             <div className="space-y-6">
               <div className="inline-flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg">
@@ -226,15 +226,13 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {/* Mobile Back Button */}
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="md:hidden mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                Back to Home
-              </button>
-            )}
+            <button
+              onClick={() => navigate('/')}
+              className="md:hidden mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+              Back to Home
+            </button>
 
             <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20">
               {/* Mobile Logo */}
@@ -362,12 +360,12 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}
-                  <button
-                    onClick={onSwitch}
+                  <Link
+                    to="/login"
                     className="text-purple-600 hover:text-purple-700 font-semibold hover:underline transition-all"
                   >
                     Sign In
-                  </button>
+                  </Link>
                 </p>
               </div>
 
