@@ -5,7 +5,14 @@ const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 export const supabase = createClient(
   `https://${projectId}.supabase.co`,
-  publicAnonKey
+  publicAnonKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
 );
 
 export const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-f9d0e288`;

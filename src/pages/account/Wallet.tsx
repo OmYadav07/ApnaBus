@@ -16,9 +16,16 @@ const Wallet = ({ profile }: WalletProps) => {
   const handleActivateWallet = async () => {
     setIsActivating(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || localStorage.getItem("access_token");
+      // Force refresh session to get the latest valid token
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
       
+      if (sessionError) {
+        // Fallback to getSession if refresh fails
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (!currentSession) throw new Error('Session expired. Please login again.');
+      }
+
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
       if (!token) throw new Error('You must be logged in to activate wallet');
 
       const response = await fetch(
