@@ -242,6 +242,7 @@ export function HomePage({ isLoggedIn, profile, onLogout }: HomePageProps) {
                   </Link>
                 </div>
               )}
+
             </div>
 
             {/* Mobile Menu Button */}
@@ -286,13 +287,19 @@ export function HomePage({ isLoggedIn, profile, onLogout }: HomePageProps) {
                       <p className="text-sm text-gray-500 mb-4">{profile?.email}</p>
                     </div>
                     <button
-                      onClick={onNavigateToDashboard}
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate('/dashboard');
+                      }}
                       className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all font-medium text-left"
                     >
                       My Dashboard
                     </button>
                     <button
-                      onClick={onLogout}
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onLogout();
+                      }}
                       className="text-red-600 hover:text-red-700 transition-colors font-medium text-left"
                     >
                       Logout
@@ -301,13 +308,19 @@ export function HomePage({ isLoggedIn, profile, onLogout }: HomePageProps) {
                 ) : (
                   <>
                     <button
-                      onClick={onNavigateToLogin}
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate('/login');
+                      }}
                       className="text-blue-600 hover:text-blue-700 transition-colors font-medium text-left"
                     >
                       Login
                     </button>
                     <button
-                      onClick={onNavigateToSignup}
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate('/signup');
+                      }}
                       className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all font-medium"
                     >
                       Sign Up
