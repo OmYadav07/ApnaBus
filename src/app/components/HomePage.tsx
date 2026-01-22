@@ -573,7 +573,7 @@ export function HomePage({ isLoggedIn, profile, onLogout }: HomePageProps) {
                 <div className="space-y-4">
                   {isLoggedIn ? (
                     <button
-                      onClick={onNavigateToDashboard}
+                      onClick={() => navigate('/dashboard')}
                       className="w-full bg-white text-blue-600 py-4 rounded-lg hover:shadow-xl transition-all font-semibold text-lg"
                     >
                       Go to Dashboard
@@ -581,13 +581,13 @@ export function HomePage({ isLoggedIn, profile, onLogout }: HomePageProps) {
                   ) : (
                     <>
                       <button
-                        onClick={onNavigateToSignup}
+                        onClick={() => navigate('/signup')}
                         className="w-full bg-white text-blue-600 py-4 rounded-lg hover:shadow-xl transition-all font-semibold text-lg"
                       >
                         Create Free Account
                       </button>
                       <button
-                        onClick={onNavigateToLogin}
+                        onClick={() => navigate('/login')}
                         className="w-full border-2 border-white text-white py-4 rounded-lg hover:bg-white/10 transition-all font-semibold text-lg"
                       >
                         Login to Continue
