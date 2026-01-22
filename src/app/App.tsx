@@ -47,6 +47,8 @@ export default function App() {
 
   const fetchProfile = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch(
         `https://zmgisuigirhxbygitpdy.supabase.co/functions/v1/make-server-f9d0e288/profile`,
         {
@@ -56,10 +58,30 @@ export default function App() {
         },
       );
       const data = await response.json();
-      setProfile(data.profile);
+      
+      // If backend profile exists, use it. Otherwise fallback to Supabase user metadata
+      if (data.profile) {
+        setProfile(data.profile);
+      } else if (session?.user) {
+        setProfile({
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+          email: session.user.email,
+          phone: session.user.user_metadata?.phone || '',
+          role: 'user'
+        });
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
-      toast.error("Failed to load profile");
+      // Fallback to Supabase metadata on error
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setProfile({
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+          email: session.user.email,
+          phone: session.user.user_metadata?.phone || '',
+          role: 'user'
+        });
+      }
     } finally {
       setLoading(false);
     }
