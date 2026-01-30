@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { Search, MapPin, Calendar, Clock, IndianRupee, Users } from 'lucide-react';
+import { Search, MapPin, Calendar, Clock, IndianRupee, Users, Bus } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
