@@ -1,64 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wallet as WalletIcon, Plus, ArrowUpRight, ArrowDownLeft, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '../../utils/supabase';
+import { apiCall } from '../../utils/supabase';
 
 interface WalletProps {
   profile?: any;
+  onWalletUpdate?: () => void;
 }
 
-const Wallet = ({ profile }: WalletProps) => {
-  const [isActivating, setIsActivating] = useState(false);
-  const transactions = profile?.transactions || [];
+const Wallet = ({ profile, onWalletUpdate }: WalletProps) => {
+  const [isAddingMoney, setIsAddingMoney] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTxns, setLoadingTxns] = useState(true);
+  const [amount, setAmount] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
   const balance = profile?.wallet_balance || 0;
-  const isWalletActive = profile?.is_wallet_active ?? false;
 
-  const handleActivateWallet = async () => {
-    setIsActivating(true);
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
     try {
-      // Force refresh session to get the latest valid token
-      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
-      
-      if (sessionError) {
-        // Fallback to getSession if refresh fails
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession) throw new Error('Session expired. Please login again.');
-      }
-
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
-      if (!token) throw new Error('You must be logged in to activate wallet');
-
-      const response = await fetch(
-        `https://zmgisuigirhxbygitpdy.supabase.co/functions/v1/make-server-f9d0e288/activate-wallet`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({})
-        }
-      );
-      
-      let data;
-      const text = await response.text();
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        data = { error: text || 'Server error' };
-      }
-      
-      if (!response.ok) {
-        throw new Error(data.error || data.message || 'Failed to activate wallet');
-      }
-
-      toast.success('Wallet activated! ₹100 welcome bonus added.');
-      window.location.reload();
+      const data = await apiCall('/wallet/transactions');
+      setTransactions(data.transactions || []);
     } catch (error: any) {
-      console.error('Wallet activation error:', error);
-      toast.error(error.message || 'Failed to activate wallet');
+      console.error('Error fetching transactions:', error);
     } finally {
-      setIsActivating(false);
+      setLoadingTxns(false);
+    }
+  };
+
+  const handleAddMoney = async () => {
+    const amountNum = parseInt(amount);
+    if (!amountNum || amountNum <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    setIsAddingMoney(true);
+    try {
+      await apiCall('/wallet/add', {
+        method: 'POST',
+        body: JSON.stringify({ amount: amountNum }),
+      });
+
+      toast.success(`Added ${amountNum} to wallet!`);
+      setShowAddModal(false);
+      setAmount('');
+      fetchTransactions();
+      if (onWalletUpdate) onWalletUpdate();
+    } catch (error: any) {
+      console.error('Add money error:', error);
+      toast.error(error.message || 'Failed to add money');
+    } finally {
+      setIsAddingMoney(false);
     }
   };
 
@@ -69,36 +65,57 @@ const Wallet = ({ profile }: WalletProps) => {
           <div className="flex justify-between items-start mb-8">
             <div>
               <p className="text-blue-100 mb-1">Available Balance</p>
-              <h2 className="text-4xl font-bold">₹{isWalletActive ? balance.toLocaleString('en-IN') : "00"}.00</h2>
+              <h2 className="text-4xl font-bold">{balance.toLocaleString('en-IN')}</h2>
             </div>
             <WalletIcon className="w-12 h-12 text-blue-200 opacity-50" />
           </div>
           <div className="flex space-x-4">
-            {isWalletActive ? (
-              <>
-                <button className="flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors">
-                  <Plus className="w-5 h-5" />
-                  <span>Add Money</span>
-                </button>
-                <button className="flex items-center space-x-2 bg-blue-500 bg-opacity-30 text-white px-6 py-3 rounded-xl font-semibold hover:bg-opacity-40 transition-colors border border-white border-opacity-20">
-                  <CreditCard className="w-5 h-5" />
-                  <span>Cards</span>
-                </button>
-              </>
-            ) : (
-              <button 
-                onClick={handleActivateWallet}
-                disabled={isActivating}
-                className="flex items-center space-x-2 bg-white text-blue-600 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50"
-              >
-                {isActivating ? 'Activating...' : 'Activate Wallet & Claim ₹100'}
-              </button>
-            )}
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add Money</span>
+            </button>
+            <button className="flex items-center space-x-2 bg-blue-500 bg-opacity-30 text-white px-6 py-3 rounded-xl font-semibold hover:bg-opacity-40 transition-colors border border-white border-opacity-20">
+              <CreditCard className="w-5 h-5" />
+              <span>Cards</span>
+            </button>
           </div>
         </div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white opacity-5 rounded-full -ml-16 -mb-16"></div>
       </div>
+
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-xl font-bold mb-4">Add Money to Wallet</h3>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter amount"
+              className="w-full px-4 py-3 border rounded-xl mb-4"
+            />
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 px-4 py-3 border rounded-xl hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddMoney}
+                disabled={isAddingMoney}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isAddingMoney ? 'Adding...' : 'Add Money'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -106,7 +123,12 @@ const Wallet = ({ profile }: WalletProps) => {
           <button className="text-blue-600 font-medium text-sm hover:underline">View All</button>
         </div>
         <div className="divide-y divide-gray-50">
-          {transactions.length > 0 ? (
+          {loadingTxns ? (
+            <div className="p-12 text-center">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading transactions...</p>
+            </div>
+          ) : transactions.length > 0 ? (
             transactions.map((tx: any) => (
               <div key={tx.id} className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
                 <div className="flex items-center space-x-4">
@@ -114,12 +136,12 @@ const Wallet = ({ profile }: WalletProps) => {
                     {tx.type === 'credit' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{tx.title}</p>
-                    <p className="text-sm text-gray-500">{new Date(tx.created_at).toLocaleDateString()}</p>
+                    <p className="font-semibold text-gray-900">{tx.description}</p>
+                    <p className="text-sm text-gray-500">{new Date(tx.timestamp).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <p className={`font-bold text-lg ${tx.type === 'credit' ? 'text-green-600' : 'text-gray-900'}`}>
-                  {tx.type === 'credit' ? '+' : '-'}₹{Math.abs(tx.amount)}
+                  {tx.type === 'credit' ? '+' : '-'}{Math.abs(tx.amount)}
                 </p>
               </div>
             ))

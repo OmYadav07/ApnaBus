@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, MapPin, Edit2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '../../utils/supabase';
 
 interface ProfileProps {
   profile?: any;
@@ -28,27 +27,8 @@ const Profile = ({ profile }: ProfileProps) => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || localStorage.getItem("access_token");
-      
-      const response = await fetch(
-        `https://zmgisuigirhxbygitpdy.supabase.co/functions/v1/make-server-f9d0e288/profile`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData)
-        }
-      );
-
-      if (!response.ok) throw new Error('Failed to update profile');
-      
-      toast.success('Profile updated successfully');
+      toast.info('Profile editing coming soon!');
       setIsEditing(false);
-      // We rely on the parent App component to refetch or we could just reload
-      window.location.reload();
     } catch (error) {
       console.error(error);
       toast.error('Failed to update profile');

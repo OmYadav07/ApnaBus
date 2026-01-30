@@ -6,15 +6,15 @@ import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { apiCall } from '../../utils/supabase';
-import { supabase } from '../../utils/supabase';
+import { authService } from '../../utils/supabase';
 
 interface SignupProps {
   onSwitch?: () => void;
   onBack?: () => void;
+  onSignupSuccess?: (user: any) => void;
 }
 
-export function Signup({ onSwitch, onBack }: SignupProps) {
+export function Signup({ onSwitch, onBack, onSignupSuccess }: SignupProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -29,7 +29,6 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
     setLoading(true);
 
     try {
-      // Validate input
       if (!formData.email || !formData.password || !formData.name || !formData.phone) {
         throw new Error('Please fill in all fields');
       }
@@ -38,57 +37,24 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
         throw new Error('Password must be at least 6 characters');
       }
 
-      // Sign up with Supabase Auth - this will send a verification email
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            name: formData.name,
-            phone: formData.phone,
-            role: 'user'
-          },
-          emailRedirectTo: window.location.origin
+      const data = await authService.signup(
+        formData.email,
+        formData.password,
+        formData.name,
+        formData.phone
+      );
+
+      if (data.success) {
+        toast.success('Account created successfully!');
+        if (onSignupSuccess) {
+          onSignupSuccess(data.user);
         }
-      });
-
-      if (error) {
-        console.error('Signup error:', error);
-        throw error;
+        navigate('/dashboard');
       }
-
-      // After successful signup, create user profile in backend
-      if (data.user) {
-        try {
-          await apiCall('/signup', {
-            method: 'POST',
-            body: JSON.stringify({
-              ...formData,
-              user_id: data.user.id
-            }),
-          });
-        } catch (apiError) {
-          console.error('Profile creation error:', apiError);
-          // Don't fail signup if profile creation fails - it can be created on first login
-        }
-      }
-
-      toast.success('Account created! Please check your email to verify your account before logging in.', {
-        duration: 6000,
-      });
-      
-      // Clear form
-      setFormData({
-        email: '',
-        password: '',
-        name: '',
-        phone: '',
-      });
-      
     } catch (error: any) {
       console.error('Signup error:', error);
       
-      if (error.message.includes('already registered')) {
+      if (error.message.includes('already exists') || error.message.includes('already registered')) {
         toast.error('An account with this email already exists. Please login instead.');
       } else {
         toast.error(error.message || 'Failed to create account');
@@ -106,7 +72,6 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 relative overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{
@@ -148,14 +113,12 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-6xl w-full grid md:grid-cols-2 gap-8 items-center">
-          {/* Left Side - Branding & Benefits */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             className="hidden md:block"
           >
-            {/* Back Button */}
             <button
               onClick={() => navigate('/')}
               className="mb-8 flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
@@ -213,19 +176,17 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
                   <h3 className="font-bold text-gray-900">Welcome Offer!</h3>
                 </div>
                 <p className="text-gray-600">
-                  Get <span className="font-bold text-purple-600">₹100 bonus</span> in your wallet on first signup!
+                  Get <span className="font-bold text-purple-600">100 bonus</span> in your wallet on first signup!
                 </p>
               </motion.div>
             </div>
           </motion.div>
 
-          {/* Right Side - Signup Form */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {/* Mobile Back Button */}
             <button
               onClick={() => navigate('/')}
               className="md:hidden mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
@@ -235,7 +196,6 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
             </button>
 
             <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20">
-              {/* Mobile Logo */}
               <div className="md:hidden text-center mb-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full mb-3">
                   <Bus className="w-8 h-8 text-white" />
@@ -248,7 +208,6 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
                 <p className="text-gray-600">Join thousands of happy travelers today</p>
               </div>
 
-              {/* Signup Form */}
               <form onSubmit={handleSignup} className="space-y-5">
                 <div>
                   <Label htmlFor="name" className="text-sm font-semibold text-gray-700 mb-2 block">
@@ -324,7 +283,7 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="pl-12 h-12 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all rounded-xl"
-                      placeholder="••••••••"
+                      placeholder="********"
                       required
                       minLength={6}
                     />
@@ -369,7 +328,6 @@ export function Signup({ onSwitch, onBack }: SignupProps) {
                 </p>
               </div>
 
-              {/* Trust Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

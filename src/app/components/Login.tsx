@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../../utils/supabase';
+import { authService } from '../../utils/supabase';
 import { toast } from 'sonner';
 import { Bus, Mail, Lock, ArrowLeft, CheckCircle, Shield } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -11,9 +11,10 @@ import { Label } from './ui/label';
 interface LoginProps {
   onSwitch?: () => void;
   onBack?: () => void;
+  onLoginSuccess?: (user: any) => void;
 }
 
-export function Login({ onSwitch, onBack }: LoginProps) {
+export function Login({ onSwitch, onBack, onLoginSuccess }: LoginProps) {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,29 +25,18 @@ export function Login({ onSwitch, onBack }: LoginProps) {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
+      const data = await authService.login(email, password);
       
-      if (data.session) {
-        localStorage.setItem('access_token', data.session.access_token);
+      if (data.success) {
         toast.success('Logged in successfully!');
+        if (onLoginSuccess) {
+          onLoginSuccess(data.user);
+        }
+        navigate('/dashboard');
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      
-      if (error.message.includes('Email not confirmed')) {
-        toast.error('Please verify your email before logging in. Check your inbox for the verification link.');
-      } else if (error.message.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password. Please try again.');
-      } else {
-        toast.error(error.message || 'Failed to login');
-      }
+      toast.error(error.message || 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -59,7 +49,6 @@ export function Login({ onSwitch, onBack }: LoginProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{
@@ -100,14 +89,12 @@ export function Login({ onSwitch, onBack }: LoginProps) {
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-6xl w-full grid md:grid-cols-2 gap-8 items-center">
-          {/* Left Side - Branding & Info */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             className="hidden md:block"
           >
-            {/* Back Button */}
             <button
               onClick={() => navigate('/')}
               className="mb-8 flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
@@ -156,13 +143,11 @@ export function Login({ onSwitch, onBack }: LoginProps) {
             </div>
           </motion.div>
 
-          {/* Right Side - Login Form */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {/* Mobile Back Button */}
             <button
               onClick={() => navigate('/')}
               className="md:hidden mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
@@ -172,7 +157,6 @@ export function Login({ onSwitch, onBack }: LoginProps) {
             </button>
 
             <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20">
-              {/* Mobile Logo */}
               <div className="md:hidden text-center mb-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full mb-3">
                   <Bus className="w-8 h-8 text-white" />
@@ -185,7 +169,6 @@ export function Login({ onSwitch, onBack }: LoginProps) {
                 <p className="text-gray-600">Enter your credentials to access your account</p>
               </div>
 
-              {/* Login Form */}
               <form onSubmit={handleLogin} className="space-y-5">
                 <div>
                   <Label htmlFor="email" className="text-sm font-semibold text-gray-700 mb-2 block">
@@ -221,7 +204,7 @@ export function Login({ onSwitch, onBack }: LoginProps) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-12 h-12 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl"
-                      placeholder="••••••••"
+                      placeholder="********"
                       required
                     />
                   </div>

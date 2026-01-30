@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { supabase } from "../utils/supabase";
+import { supabase, apiCall } from "../utils/supabase";
 import { HomePage } from "./components/HomePage";
 import { Login } from "./components/Login";
 import { Signup } from "./components/Signup";
@@ -20,79 +20,42 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        localStorage.setItem("access_token", session.access_token);
-        fetchProfile();
-      } else {
-        setLoading(false);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session) {
-        localStorage.setItem("access_token", session.access_token);
-        await fetchProfile();
-      } else {
-        localStorage.removeItem("access_token");
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch(
-        `https://zmgisuigirhxbygitpdy.supabase.co/functions/v1/make-server-f9d0e288/profile`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        },
-      );
-      const data = await response.json();
-      
-      // If backend profile exists, use it. Otherwise fallback to Supabase user metadata
-      if (data.profile) {
-        setProfile(data.profile);
-      } else if (session?.user) {
-        setProfile({
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
-          email: session.user.email,
-          phone: session.user.user_metadata?.phone || '',
-          role: 'user'
-        });
+  const checkAuth = async () => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      try {
+        const data = await apiCall("/profile");
+        if (data.profile) {
+          setProfile(data.profile);
+          setSession({ access_token: token });
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        localStorage.removeItem("access_token");
       }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      // Fallback to Supabase metadata on error
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setProfile({
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
-          email: session.user.email,
-          phone: session.user.user_metadata?.phone || '',
-          role: 'user'
-        });
-      }
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
     localStorage.removeItem("access_token");
     setSession(null);
     setProfile(null);
     toast.success("Logged out successfully");
+  };
+
+  const refreshProfile = async () => {
+    try {
+      const data = await apiCall("/profile");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+    }
   };
 
   if (loading) {
@@ -115,21 +78,39 @@ export default function App() {
             <HomePage
               isLoggedIn={!!session}
               profile={profile}
-              onNavigateToLogin={() => {}} // Controlled by Router Link now
+              onNavigateToLogin={() => {}}
               onNavigateToSignup={() => {}}
               onNavigateToDashboard={() => {}}
               onLogout={handleLogout}
             />
           } />
-          <Route path="/login" element={<Login onSwitch={() => {}} onBack={() => {}} />} />
-          <Route path="/signup" element={<Signup onSwitch={() => {}} onBack={() => {}} />} />
+          <Route path="/login" element={
+            <Login 
+              onSwitch={() => {}} 
+              onBack={() => {}} 
+              onLoginSuccess={(userData) => {
+                setSession({ access_token: localStorage.getItem("access_token") });
+                setProfile(userData);
+              }}
+            />
+          } />
+          <Route path="/signup" element={
+            <Signup 
+              onSwitch={() => {}} 
+              onBack={() => {}}
+              onSignupSuccess={(userData) => {
+                setSession({ access_token: localStorage.getItem("access_token") });
+                setProfile(userData);
+              }}
+            />
+          } />
           
           <Route path="/account" element={
             session ? <AccountLayout profile={profile} /> : <Navigate to="/login" />
           }>
             <Route index element={<Navigate to="/account/profile" />} />
             <Route path="profile" element={<Profile profile={profile} />} />
-            <Route path="wallet" element={<Wallet profile={profile} />} />
+            <Route path="wallet" element={<Wallet profile={profile} onWalletUpdate={refreshProfile} />} />
             <Route path="bookings" element={<BookingHistory profile={profile} />} />
             <Route path="cancel" element={<CancelTicket profile={profile} />} />
             <Route path="reschedule" element={<RescheduleTicket profile={profile} />} />
