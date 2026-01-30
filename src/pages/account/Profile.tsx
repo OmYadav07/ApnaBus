@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, MapPin, Edit2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiCall } from '../../utils/supabase';
 
 interface ProfileProps {
   profile?: any;
+  onProfileUpdate?: () => void;
 }
 
-const Profile = ({ profile }: ProfileProps) => {
+const Profile = ({ profile, onProfileUpdate }: ProfileProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: profile?.name || "",
     phone: profile?.phone || "",
-    address: profile?.address || ""
   });
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +20,6 @@ const Profile = ({ profile }: ProfileProps) => {
     name: profile?.name || "Guest User",
     email: profile?.email || "No email provided",
     phone: profile?.phone || "Not provided",
-    address: profile?.address || "Not provided",
     memberSince: profile?.created_at ? new Date(profile.created_at).getFullYear() : "2024",
     totalTrips: profile?.total_trips || 0
   };
@@ -27,11 +27,17 @@ const Profile = ({ profile }: ProfileProps) => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      toast.info('Profile editing coming soon!');
+      await apiCall('/profile', {
+        method: 'PUT',
+        body: JSON.stringify(formData),
+      });
+      
+      toast.success('Profile updated successfully');
       setIsEditing(false);
-    } catch (error) {
+      if (onProfileUpdate) onProfileUpdate();
+    } catch (error: any) {
       console.error(error);
-      toast.error('Failed to update profile');
+      toast.error(error.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -54,7 +60,6 @@ const Profile = ({ profile }: ProfileProps) => {
                   setFormData({
                     name: profile?.name || "",
                     phone: profile?.phone || "",
-                    address: profile?.address || ""
                   });
                   setIsEditing(true);
                 }}
@@ -106,15 +111,6 @@ const Profile = ({ profile }: ProfileProps) => {
                       className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
                 </div>
               ) : (
                 <>
@@ -131,10 +127,6 @@ const Profile = ({ profile }: ProfileProps) => {
                     <div className="flex items-center space-x-3 text-gray-600">
                       <Phone className="w-5 h-5 text-green-500" />
                       <span>{user.phone}</span>
-                    </div>
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <MapPin className="w-5 h-5 text-red-500" />
-                      <span>{user.address}</span>
                     </div>
                   </div>
                 </>

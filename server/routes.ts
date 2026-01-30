@@ -99,7 +99,12 @@ export function registerRoutes(app: Express) {
 
   app.post("/api/create-admin", async (req, res) => {
     try {
-      const { email, password, name } = req.body;
+      const { email, password, name, admin_secret } = req.body;
+
+      const expectedSecret = process.env.ADMIN_SETUP_SECRET || "initial-setup-only";
+      if (admin_secret !== expectedSecret) {
+        return res.status(403).json({ error: "Invalid admin secret" });
+      }
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
@@ -147,6 +152,32 @@ export function registerRoutes(app: Express) {
     } catch (error: any) {
       console.error("Profile fetch error:", error);
       res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  app.put("/api/profile", authenticateToken, async (req: any, res) => {
+    try {
+      const { name, phone } = req.body;
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const updatedUser = await storage.updateUser(req.user.id, { name, phone });
+      res.json({
+        success: true,
+        profile: {
+          id: updatedUser?.id,
+          email: updatedUser?.email,
+          name: updatedUser?.name,
+          phone: updatedUser?.phone,
+          role: updatedUser?.role,
+          wallet_balance: updatedUser?.walletBalance,
+        },
+      });
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ error: "Failed to update profile" });
     }
   });
 

@@ -7,6 +7,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<schema.User | undefined>;
   createUser(user: schema.InsertUser): Promise<schema.User>;
   updateUserWallet(userId: number, amount: number): Promise<schema.User | undefined>;
+  updateUser(userId: number, updates: { name?: string; phone?: string }): Promise<schema.User | undefined>;
 
   getBuses(): Promise<schema.Bus[]>;
   getBus(id: number): Promise<schema.Bus | undefined>;
@@ -53,6 +54,19 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(schema.users)
       .set({ walletBalance: user.walletBalance + amount })
+      .where(eq(schema.users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async updateUser(userId: number, updates: { name?: string; phone?: string }): Promise<schema.User | undefined> {
+    const updateData: Partial<schema.InsertUser> = {};
+    if (updates.name) updateData.name = updates.name;
+    if (updates.phone) updateData.phone = updates.phone;
+
+    const [updated] = await db
+      .update(schema.users)
+      .set(updateData)
       .where(eq(schema.users.id, userId))
       .returning();
     return updated;
