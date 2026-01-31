@@ -192,8 +192,8 @@ export function BusManagement() {
                     <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
                       <div><span className="font-medium">Route:</span> {bus.source} → {bus.destination}</div>
                       <div><span className="font-medium">Price:</span> ₹{bus.price}</div>
-                      <div><span className="font-medium">Seats:</span> {bus.total_seats}</div>
-                      <div><span className="font-medium">Departure:</span> {bus.departure_time || 'N/A'}</div>
+                      <div><span className="font-medium">Seats:</span> {bus.totalSeats || bus.total_seats}</div>
+                      <div><span className="font-medium">Departure:</span> {bus.departureTime || bus.departure_time || 'N/A'}</div>
                     </div>
                   </div>
                   <div className="flex space-x-2">
