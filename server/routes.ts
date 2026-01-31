@@ -230,7 +230,7 @@ export function registerRoutes(app: Express) {
       const busData = req.body;
       const bus = await storage.createBus({
         name: busData.name,
-        busNumber: busData.bus_number || busData.busNumber,
+        busNumber: busData.bus_number || busData.busNumber || `BUS-${Math.floor(1000 + Math.random() * 9000)}`,
         source: busData.source,
         destination: busData.destination,
         departureTime: busData.departure_time || busData.departureTime,
