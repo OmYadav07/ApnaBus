@@ -20,6 +20,8 @@ export function BusManagement() {
     total_seats: '40',
     departure_time: '',
     arrival_time: '',
+    senior_citizen_seats: '',
+    female_seats: '',
   });
 
   useEffect(() => {
@@ -40,12 +42,19 @@ export function BusManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const seniorSeats = formData.senior_citizen_seats.split(',').map(s => parseInt(s.trim())).filter(s => !isNaN(s));
+      const femaleSeats = formData.female_seats.split(',').map(s => parseInt(s.trim())).filter(s => !isNaN(s));
+
       await apiCall('/buses', {
         method: 'POST',
         body: JSON.stringify({
           ...formData,
           price: parseFloat(formData.price),
           total_seats: parseInt(formData.total_seats),
+          amenities: {
+            senior_citizen_seats: seniorSeats,
+            female_seats: femaleSeats,
+          }
         }),
       });
 
@@ -59,6 +68,8 @@ export function BusManagement() {
         total_seats: '40',
         departure_time: '',
         arrival_time: '',
+        senior_citizen_seats: '',
+        female_seats: '',
       });
       fetchBuses();
     } catch (error: any) {
@@ -156,6 +167,7 @@ export function BusManagement() {
                         type="time"
                         value={formData.departure_time}
                         onChange={(e) => setFormData({ ...formData, departure_time: e.target.value })}
+                        required
                       />
                     </div>
                     <div>
@@ -164,6 +176,25 @@ export function BusManagement() {
                         type="time"
                         value={formData.arrival_time}
                         onChange={(e) => setFormData({ ...formData, arrival_time: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Senior Citizen Seats (comma separated)</Label>
+                      <Input
+                        value={formData.senior_citizen_seats}
+                        onChange={(e) => setFormData({ ...formData, senior_citizen_seats: e.target.value })}
+                        placeholder="1, 2, 3"
+                      />
+                    </div>
+                    <div>
+                      <Label>Female Seats (comma separated)</Label>
+                      <Input
+                        value={formData.female_seats}
+                        onChange={(e) => setFormData({ ...formData, female_seats: e.target.value })}
+                        placeholder="4, 5, 6"
                       />
                     </div>
                   </div>
@@ -194,6 +225,8 @@ export function BusManagement() {
                       <div><span className="font-medium">Price:</span> ₹{bus.price}</div>
                       <div><span className="font-medium">Seats:</span> {bus.totalSeats || bus.total_seats}</div>
                       <div><span className="font-medium">Departure:</span> {bus.departureTime || bus.departure_time || 'N/A'}</div>
+                      <div><span className="font-medium">Arrival:</span> {bus.arrivalTime || bus.arrival_time || 'N/A'}</div>
+                      <div className="col-span-2"><span className="font-medium">Special Seats:</span> Senior: {(bus.amenities?.senior_citizen_seats || []).join(', ') || 'None'} | Female: {(bus.amenities?.female_seats || []).join(', ') || 'None'}</div>
                     </div>
                   </div>
                   <div className="flex space-x-2">

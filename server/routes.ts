@@ -237,7 +237,7 @@ export function registerRoutes(app: Express) {
         arrivalTime: busData.arrival_time || busData.arrivalTime,
         price: busData.price,
         totalSeats: busData.total_seats || busData.totalSeats || 40,
-        amenities: busData.amenities,
+        amenities: busData.amenities || { senior_citizen_seats: [], female_seats: [] },
       });
       res.json({ success: true, bus });
     } catch (error: any) {
