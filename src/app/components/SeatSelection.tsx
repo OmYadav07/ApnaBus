@@ -84,14 +84,15 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
   };
 
   const renderSeats = () => {
-    const rows = Math.ceil(bus.total_seats / 4);
-    const seats = [];
+    const totalSeatsCount = bus.totalSeats || bus.total_seats || 40;
+    const rows = Math.ceil(totalSeatsCount / 4);
+    const seats: JSX.Element[] = [];
 
     for (let row = 0; row < rows; row++) {
-      const rowSeats = [];
+      const rowSeats: JSX.Element[] = [];
       for (let col = 0; col < 4; col++) {
         const seatNumber = row * 4 + col + 1;
-        if (seatNumber > bus.total_seats) break;
+        if (seatNumber > totalSeatsCount) break;
 
         const isBooked = bookedSeats.includes(seatNumber);
         const isSelected = selectedSeats.includes(seatNumber);
@@ -99,6 +100,7 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
         rowSeats.push(
           <button
             key={seatNumber}
+            type="button"
             onClick={() => toggleSeat(seatNumber)}
             disabled={isBooked}
             className={`
