@@ -14,6 +14,7 @@ export function BusManagement() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [viewBusSeats, setViewBusSeats] = useState<any>(null);
+  const [editingBus, setEditingBus] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     source: '',
@@ -29,6 +30,34 @@ export function BusManagement() {
   useEffect(() => {
     fetchBuses();
   }, []);
+
+  useEffect(() => {
+    if (editingBus) {
+      setFormData({
+        name: editingBus.name || '',
+        source: editingBus.source || '',
+        destination: editingBus.destination || '',
+        price: editingBus.price?.toString() || '',
+        total_seats: (editingBus.totalSeats || editingBus.total_seats || 40).toString(),
+        departure_time: editingBus.departureTime || editingBus.departure_time || '',
+        arrival_time: editingBus.arrivalTime || editingBus.arrival_time || '',
+        senior_citizen_seats: editingBus.amenities?.senior_citizen_seats?.join(', ') || '',
+        female_seats: editingBus.amenities?.female_seats?.join(', ') || '',
+      });
+    } else {
+      setFormData({
+        name: '',
+        source: '',
+        destination: '',
+        price: '',
+        total_seats: '40',
+        departure_time: '',
+        arrival_time: '',
+        senior_citizen_seats: '',
+        female_seats: '',
+      });
+    }
+  }, [editingBus]);
 
   const fetchBuses = async () => {
     try {
@@ -47,35 +76,35 @@ export function BusManagement() {
       const seniorSeats = formData.senior_citizen_seats.split(',').map(s => parseInt(s.trim())).filter(s => !isNaN(s));
       const femaleSeats = formData.female_seats.split(',').map(s => parseInt(s.trim())).filter(s => !isNaN(s));
 
-      await apiCall('/buses', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          total_seats: parseInt(formData.total_seats),
-          amenities: {
-            senior_citizen_seats: seniorSeats,
-            female_seats: femaleSeats,
-          }
-        }),
-      });
+      const payload = {
+        ...formData,
+        price: parseFloat(formData.price),
+        total_seats: parseInt(formData.total_seats),
+        amenities: {
+          senior_citizen_seats: seniorSeats,
+          female_seats: femaleSeats,
+        }
+      };
 
-      toast.success('Bus added successfully');
+      if (editingBus) {
+        await apiCall(`/buses/${editingBus.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+        toast.success('Bus updated successfully');
+      } else {
+        await apiCall('/buses', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        toast.success('Bus added successfully');
+      }
+
       setOpen(false);
-      setFormData({
-        name: '',
-        source: '',
-        destination: '',
-        price: '',
-        total_seats: '40',
-        departure_time: '',
-        arrival_time: '',
-        senior_citizen_seats: '',
-        female_seats: '',
-      });
+      setEditingBus(null);
       fetchBuses();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to add bus');
+      toast.error(error.message || `Failed to ${editingBus ? 'update' : 'add'} bus`);
     }
   };
 
@@ -124,16 +153,19 @@ export function BusManagement() {
               <Bus className="w-5 h-5" />
               <span>Bus Management</span>
             </CardTitle>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(val) => {
+              setOpen(val);
+              if (!val) setEditingBus(null);
+            }}>
               <DialogTrigger asChild>
-                <Button>
+                <Button onClick={() => setEditingBus(null)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Bus
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Add New Bus</DialogTitle>
+                  <DialogTitle>{editingBus ? 'Edit Bus' : 'Add New Bus'}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
@@ -224,7 +256,9 @@ export function BusManagement() {
                       />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full">Add Bus</Button>
+                  <Button type="submit" className="w-full">
+                    {editingBus ? 'Update Bus' : 'Add Bus'}
+                  </Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -255,6 +289,18 @@ export function BusManagement() {
                       >
                         <Eye className="w-4 h-4" />
                         <span>View Seats</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingBus(bus);
+                          setOpen(true);
+                        }}
+                        className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>Edit</span>
                       </Button>
                       <Button
                         variant="destructive"
