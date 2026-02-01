@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Bus } from 'lucide-react';
+import { Plus, Edit, Trash2, Bus, Eye } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { SeatSelection } from './SeatSelection';
 
 export function BusManagement() {
   const [buses, setBuses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [viewBusSeats, setViewBusSeats] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     source: '',
@@ -89,6 +91,30 @@ export function BusManagement() {
     }
   };
 
+  if (viewBusSeats) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between mb-6">
+          <Button 
+            variant="outline" 
+            onClick={() => setViewBusSeats(null)}
+          >
+            Back to Management
+          </Button>
+          <div className="text-right">
+            <h2 className="text-xl font-bold text-purple-900">{viewBusSeats.name}</h2>
+            <p className="text-sm text-gray-500">{viewBusSeats.source} → {viewBusSeats.destination}</p>
+          </div>
+        </div>
+        <SeatSelection 
+          bus={viewBusSeats} 
+          profile={{ role: 'admin' }} 
+          onBack={() => setViewBusSeats(null)} 
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -105,7 +131,7 @@ export function BusManagement() {
                   Add Bus
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Add New Bus</DialogTitle>
                 </DialogHeader>
@@ -217,26 +243,65 @@ export function BusManagement() {
           {buses.map((bus) => (
             <Card key={bus.id}>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold mb-2">{bus.name}</h3>
-                    <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
-                      <div><span className="font-medium">Route:</span> {bus.source} → {bus.destination}</div>
-                      <div><span className="font-medium">Price:</span> ₹{bus.price}</div>
-                      <div><span className="font-medium">Seats:</span> {bus.totalSeats || bus.total_seats}</div>
-                      <div><span className="font-medium">Departure:</span> {bus.departureTime || bus.departure_time || 'N/A'}</div>
-                      <div><span className="font-medium">Arrival:</span> {bus.arrivalTime || bus.arrival_time || 'N/A'}</div>
-                      <div className="col-span-2"><span className="font-medium">Special Seats:</span> Senior: {(bus.amenities?.senior_citizen_seats || []).join(', ') || 'None'} | Female: {(bus.amenities?.female_seats || []).join(', ') || 'None'}</div>
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <h3 className="text-xl font-bold text-purple-900">{bus.name}</h3>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setViewBusSeats(bus)}
+                        className="flex items-center space-x-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>View Seats</span>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(bus.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(bus.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Route</p>
+                      <p className="text-base font-semibold text-gray-900">{bus.source} → {bus.destination}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Price</p>
+                      <p className="text-base font-semibold text-gray-900">₹{bus.price}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Seats</p>
+                      <p className="text-base font-semibold text-gray-900">{bus.totalSeats || bus.total_seats}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Available Seat</p>
+                      <p className="text-base font-semibold text-green-600">
+                        {bus.availableSeats ?? (bus.totalSeats || bus.total_seats)}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Booked Seats</p>
+                      <p className="text-base font-semibold text-red-600">
+                        {(bus.totalSeats || bus.total_seats) - (bus.availableSeats ?? (bus.totalSeats || bus.total_seats))}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Arrival</p>
+                      <p className="text-base font-semibold text-indigo-600">{bus.arrivalTime || bus.arrival_time || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Departure</p>
+                      <p className="text-base font-semibold text-blue-600">{bus.departureTime || bus.departure_time || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
