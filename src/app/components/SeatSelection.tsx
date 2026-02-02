@@ -96,6 +96,8 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
 
         const isBooked = bookedSeats.includes(seatNumber);
         const isSelected = selectedSeats.includes(seatNumber);
+        const isFemale = bus.amenities?.female_seats?.includes(seatNumber);
+        const isSenior = bus.amenities?.senior_citizen_seats?.includes(seatNumber);
 
         rowSeats.push(
           <button
@@ -105,9 +107,11 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
             disabled={isBooked}
             className={`
               w-12 h-12 rounded-lg font-semibold text-sm transition-all
-              ${isBooked ? 'bg-red-100 text-red-400 cursor-not-allowed' : ''}
+              ${isBooked ? 'bg-red-700 text-white cursor-not-allowed shadow-inner' : ''}
               ${isSelected ? 'bg-green-500 text-white shadow-lg scale-105' : ''}
-              ${!isBooked && !isSelected ? 'bg-gray-100 hover:bg-blue-100 text-gray-700' : ''}
+              ${!isBooked && !isSelected && isFemale ? 'bg-pink-400 text-white hover:bg-pink-500' : ''}
+              ${!isBooked && !isSelected && isSenior ? 'bg-orange-400 text-white hover:bg-orange-500' : ''}
+              ${!isBooked && !isSelected && !isFemale && !isSenior ? 'bg-gray-100 hover:bg-blue-100 text-gray-700' : ''}
             `}
           >
             {seatNumber}
@@ -119,11 +123,11 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
         }
       }
 
-      seats.push(
-        <div key={row} className="flex items-center justify-center space-x-2">
-          {rowSeats}
-        </div>
-      );
+    seats.push(
+      <div key={row} className="flex items-center justify-center gap-3">
+        {rowSeats}
+      </div>
+    );
     }
 
     return seats;
@@ -152,7 +156,7 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
               ) : (
                 <div>
                   {/* Legend */}
-                  <div className="flex items-center justify-center space-x-6 mb-6 pb-4 border-b">
+                  <div className="flex flex-wrap items-center justify-center gap-6 mb-6 pb-4 border-b">
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 bg-gray-100 rounded"></div>
                       <span className="text-sm text-gray-600">Available</span>
@@ -162,8 +166,16 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
                       <span className="text-sm text-gray-600">Selected</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-red-100 rounded"></div>
+                      <div className="w-8 h-8 bg-red-700 rounded"></div>
                       <span className="text-sm text-gray-600">Booked</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-pink-400 rounded"></div>
+                      <span className="text-sm text-gray-600">Female</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-orange-400 rounded"></div>
+                      <span className="text-sm text-gray-600">Senior</span>
                     </div>
                   </div>
 
