@@ -16,15 +16,23 @@ interface SeatSelectionProps {
 export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
   const [bookedSeats, setBookedSeats] = useState<number[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
+  const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(false);
-  const [journeyDate, setJourneyDate] = useState(new Date().toISOString().split('T')[0]);
-  const [passengerName, setPassengerName] = useState(profile.name || '');
-  const [passengerPhone, setPassengerPhone] = useState(profile.phone || '');
 
   useEffect(() => {
     fetchSeats();
   }, []);
+
+  useEffect(() => {
+    // Sync passenger details with selected seats
+    setPassengerDetails(prev => {
+      const newDetails = selectedSeats.map(seatId => {
+        const existing = prev.find(p => p.seat_no === seatId);
+        return existing || { seat_no: seatId, name: '', age: '', gender: 'Male' };
+      });
+      return newDetails;
+    });
+  }, [selectedSeats]);
 
   const fetchSeats = async () => {
     try {
@@ -47,14 +55,28 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
     );
   };
 
+  const handlePassengerChange = (index: number, field: string, value: string) => {
+    setPassengerDetails(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
   const handleBooking = async () => {
     if (selectedSeats.length === 0) {
       toast.error('Please select at least one seat');
       return;
     }
 
+    const invalidPassenger = passengerDetails.find(p => !p.name || !p.age || !p.gender);
+    if (invalidPassenger) {
+      toast.error('Please fill all passenger details');
+      return;
+    }
+
     const totalAmount = bus.price * selectedSeats.length;
-    if (profile.wallet_balance < totalAmount) {
+    if (profile.role !== 'admin' && profile.wallet_balance < totalAmount) {
       toast.error('Insufficient wallet balance. Please add money to your wallet.');
       return;
     }
@@ -67,10 +89,7 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
           bus_id: bus.id,
           seats: selectedSeats,
           journey_date: journeyDate,
-          passenger_details: {
-            name: passengerName,
-            phone: passengerPhone
-          }
+          passenger_details: passengerDetails
         }),
       });
 
@@ -209,22 +228,62 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
                 />
               </div>
 
-              <div>
-                <Label>Passenger Name</Label>
-                <Input
-                  value={passengerName}
-                  onChange={(e) => setPassengerName(e.target.value)}
-                  placeholder="Enter name"
-                />
-              </div>
+              <div className="space-y-6 pt-4">
+                {passengerDetails.map((passenger, index) => (
+                  <div key={passenger.seat_no} className="p-4 border rounded-lg bg-gray-50 space-y-4">
+                    <p className="font-bold text-purple-900 border-b pb-2">
+                      Passenger {index + 1} (Seat: {passenger.seat_no})
+                    </p>
+                    
+                    <div>
+                      <Label>Name</Label>
+                      <Input
+                        value={passenger.name}
+                        onChange={(e) => handlePassengerChange(index, 'name', e.target.value)}
+                        placeholder="Enter name"
+                      />
+                    </div>
 
-              <div>
-                <Label>Phone Number</Label>
-                <Input
-                  value={passengerPhone}
-                  onChange={(e) => setPassengerPhone(e.target.value)}
-                  placeholder="Enter phone"
-                />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Age</Label>
+                        <Input
+                          type="number"
+                          value={passenger.age}
+                          onChange={(e) => handlePassengerChange(index, 'age', e.target.value)}
+                          placeholder="Age"
+                        />
+                      </div>
+                      <div>
+                        <Label>Gender</Label>
+                        <div className="flex items-center space-x-4 pt-2">
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`gender-${passenger.seat_no}`}
+                              value="Male"
+                              checked={passenger.gender === 'Male'}
+                              onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
+                              className="text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm">Male</span>
+                          </label>
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`gender-${passenger.seat_no}`}
+                              value="Female"
+                              checked={passenger.gender === 'Female'}
+                              onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
+                              className="text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm">Female</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className="pt-4 border-t space-y-2">
