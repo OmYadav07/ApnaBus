@@ -152,6 +152,56 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
     return seats;
   };
 
+  const [booking, setBooking] = useState(false);
+  const [journeyDate, setJourneyDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const handlePassengerChange = (index: number, field: string, value: string) => {
+    setPassengerDetails(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleBooking = async () => {
+    if (selectedSeats.length === 0) {
+      toast.error('Please select at least one seat');
+      return;
+    }
+
+    const invalidPassenger = passengerDetails.find(p => !p.name || !p.age || !p.gender);
+    if (invalidPassenger) {
+      toast.error('Please fill all passenger details');
+      return;
+    }
+
+    const totalAmount = bus.price * selectedSeats.length;
+    if (profile.role !== 'admin' && profile.wallet_balance < totalAmount) {
+      toast.error('Insufficient wallet balance. Please add money to your wallet.');
+      return;
+    }
+
+    setBooking(true);
+    try {
+      await apiCall('/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          bus_id: bus.id,
+          seats: selectedSeats,
+          journey_date: journeyDate,
+          passenger_details: passengerDetails
+        }),
+      });
+
+      toast.success('Booking successful!');
+      onBack();
+    } catch (error: any) {
+      toast.error(error.message || 'Booking failed');
+    } finally {
+      setBooking(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Button variant="outline" onClick={onBack} className="mb-4">
