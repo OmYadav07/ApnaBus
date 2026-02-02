@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -18,6 +18,8 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
   const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState(false);
+  const [journeyDate, setJourneyDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     fetchSeats();
@@ -142,64 +144,14 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
         }
       }
 
-    seats.push(
-      <div key={row} className="flex items-center justify-center gap-3">
-        {rowSeats}
-      </div>
-    );
+      seats.push(
+        <div key={row} className="flex items-center justify-center gap-3">
+          {rowSeats}
+        </div>
+      );
     }
 
     return seats;
-  };
-
-  const [booking, setBooking] = useState(false);
-  const [journeyDate, setJourneyDate] = useState(new Date().toISOString().split('T')[0]);
-
-  const handlePassengerChange = (index: number, field: string, value: string) => {
-    setPassengerDetails(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  };
-
-  const handleBooking = async () => {
-    if (selectedSeats.length === 0) {
-      toast.error('Please select at least one seat');
-      return;
-    }
-
-    const invalidPassenger = passengerDetails.find(p => !p.name || !p.age || !p.gender);
-    if (invalidPassenger) {
-      toast.error('Please fill all passenger details');
-      return;
-    }
-
-    const totalAmount = bus.price * selectedSeats.length;
-    if (profile.role !== 'admin' && profile.wallet_balance < totalAmount) {
-      toast.error('Insufficient wallet balance. Please add money to your wallet.');
-      return;
-    }
-
-    setBooking(true);
-    try {
-      await apiCall('/bookings', {
-        method: 'POST',
-        body: JSON.stringify({
-          bus_id: bus.id,
-          seats: selectedSeats,
-          journey_date: journeyDate,
-          passenger_details: passengerDetails
-        }),
-      });
-
-      toast.success('Booking successful!');
-      onBack();
-    } catch (error: any) {
-      toast.error(error.message || 'Booking failed');
-    } finally {
-      setBooking(false);
-    }
   };
 
   return (
@@ -231,7 +183,7 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
                       <span className="text-sm text-gray-600">Available</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-green-500 rounded"></div>
+                      <div className="w-8 h-8 bg-green-500 rounded-bottom"></div>
                       <span className="text-sm text-gray-600">Selected</span>
                     </div>
                     <div className="flex items-center space-x-2">
