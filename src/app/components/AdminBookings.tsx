@@ -71,20 +71,22 @@ export function AdminBookings() {
                       <div><span className="font-medium">User:</span> {booking.user?.name} ({booking.user?.email})</div>
                       <div><span className="font-medium">Route:</span> {booking.bus?.source} → {booking.bus?.destination}</div>
                       <div><span className="font-medium">Seats:</span> {booking.seats?.join(', ')}</div>
-                      <div><span className="font-medium">Amount:</span> ₹{booking.total_amount}</div>
-                      <div><span className="font-medium">Date:</span> {new Date(booking.journey_date).toLocaleDateString()}</div>
+                      <div><span className="font-medium">Amount:</span> ₹{booking.totalAmount || booking.total_amount}</div>
+                      <div><span className="font-medium">Date:</span> {booking.journeyDate || booking.journey_date ? new Date(booking.journeyDate || booking.journey_date).toLocaleDateString() : 'N/A'}</div>
                     </div>
                   </div>
-                  {booking.status === 'booked' && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleCancel(booking.id)}
-                    >
-                      <XCircle className="w-4 h-4 mr-1" />
-                      Cancel
-                    </Button>
-                  )}
+                  <div className="flex flex-col space-y-2">
+                    {booking.status === 'booked' && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleCancel(booking.id)}
+                      >
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
