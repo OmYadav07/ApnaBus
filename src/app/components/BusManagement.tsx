@@ -334,7 +334,7 @@ export function BusManagement() {
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Booked Seats</p>
                       <p className="text-base font-semibold text-red-600">
-                        {(bus.totalSeats || bus.total_seats) - (bus.availableSeats ?? (bus.totalSeats || bus.total_seats))}
+                        {bus.bookedSeatsCount ?? 0}
                       </p>
                     </div>
                   </div>

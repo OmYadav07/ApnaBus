@@ -184,7 +184,16 @@ export function registerRoutes(app: Express) {
   app.get("/api/buses", async (req, res) => {
     try {
       const buses = await storage.getBuses();
-      res.json({ buses });
+      const busesWithStats = await Promise.all(buses.map(async (bus) => {
+        const bookings = await storage.getBookingsByBus(bus.id);
+        const bookedSeats = bookings.flatMap((b: any) => b.seats || []);
+        return {
+          ...bus,
+          bookedSeatsCount: bookedSeats.length,
+          availableSeats: bus.totalSeats - bookedSeats.length
+        };
+      }));
+      res.json({ buses: busesWithStats });
     } catch (error: any) {
       console.error("Fetch buses error:", error);
       res.status(500).json({ error: "Failed to fetch buses" });
