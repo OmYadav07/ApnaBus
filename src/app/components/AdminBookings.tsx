@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { Ticket, XCircle } from 'lucide-react';
+import { Ticket, XCircle, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 export function AdminBookings() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -76,6 +78,15 @@ export function AdminBookings() {
                     </div>
                   </div>
                   <div className="flex flex-col space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedBooking(booking)}
+                      className="flex items-center space-x-2"
+                    >
+                      <Users className="w-4 h-4" />
+                      <span>Passenger Details</span>
+                    </Button>
                     {booking.status === 'booked' && (
                       <Button
                         variant="destructive"
@@ -93,6 +104,58 @@ export function AdminBookings() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!selectedBooking} onOpenChange={(val) => !val && setSelectedBooking(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Users className="w-5 h-5" />
+              <span>Passenger Details - {selectedBooking?.bus?.name}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4 pb-4 border-b">
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Booking ID</p>
+                <p className="font-semibold text-purple-900">#{selectedBooking?.id}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Route</p>
+                <p className="font-semibold text-purple-900">
+                  {selectedBooking?.bus?.source} → {selectedBooking?.bus?.destination}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {Array.isArray(selectedBooking?.passengerDetails) || Array.isArray(selectedBooking?.passenger_details) ? (
+                (selectedBooking?.passengerDetails || selectedBooking?.passenger_details).map((p: any, idx: number) => (
+                  <div key={idx} className="p-4 border rounded-lg bg-gray-50 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-gray-900">{p.name || 'N/A'}</p>
+                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <span>Age: {p.age || 'N/A'}</span>
+                        <span>Gender: {p.gender || 'N/A'}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 uppercase">Seat</p>
+                      <p className="text-lg font-bold text-blue-600">
+                        {p.seat_no || (selectedBooking?.seats && selectedBooking.seats[idx]) || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500 italic">
+                  No detailed passenger information available
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
