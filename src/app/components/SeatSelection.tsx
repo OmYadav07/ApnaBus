@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -111,30 +111,39 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
   };
 
   const downloadTicketPDF = async () => {
-    if (!ticketRef.current) return;
+    if (!ticketRef.current) {
+        toast.error('Ticket content not found');
+        return;
+    }
     
     try {
+      toast.loading('Generating PDF...', { id: 'pdf-gen' });
+      
+      // Ensure the ticket is rendered in a way that html2canvas can capture it
+      // We might need to make it temporarily visible if it's hidden in a modal
       const canvas = await html2canvas(ticketRef.current, {
         scale: 2,
         useCORS: true,
-        logging: false
+        logging: false,
+        backgroundColor: '#ffffff'
       });
+      
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`ApnaBus-Ticket-${lastBooking.id}.pdf`);
-      toast.success('Ticket downloaded as PDF!');
+      toast.success('Ticket downloaded as PDF!', { id: 'pdf-gen' });
     } catch (error) {
-      toast.error('Failed to generate PDF');
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF', { id: 'pdf-gen' });
     }
   };
 
   const TicketCard = ({ booking }: { booking: any }) => (
-    <div ref={ticketRef} className="bg-white p-6 rounded-xl border-2 border-dashed border-blue-200 shadow-sm max-w-md mx-auto overflow-hidden text-left">
+    <div id="printable-ticket" ref={ticketRef} className="bg-white p-6 rounded-xl border-2 border-dashed border-blue-200 shadow-sm max-w-md mx-auto overflow-hidden text-left">
       <div className="flex justify-between items-start border-b-2 border-blue-50 pb-4 mb-4">
         <div>
           <h3 className="text-xl font-black text-blue-900 tracking-tight">ApnaBus</h3>
@@ -229,12 +238,12 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
             onClick={() => toggleSeat(seatNumber)}
             disabled={isBooked}
             className={`
-              w-12 h-12 rounded-lg font-semibold text-sm transition-all
-              \${isBooked ? 'bg-red-700 text-white cursor-not-allowed shadow-inner' : ''}
-              \${isSelected ? 'bg-green-500 text-white shadow-lg scale-105' : ''}
-              \${!isBooked && !isSelected && isFemale ? 'bg-pink-400 text-white hover:bg-pink-500' : ''}
-              \${!isBooked && !isSelected && isSenior ? 'bg-orange-400 text-white hover:bg-orange-500' : ''}
-              \${!isBooked && !isSelected && !isFemale && !isSenior ? 'bg-gray-100 hover:bg-blue-100 text-gray-700' : ''}
+              w-12 h-12 rounded-lg font-semibold text-sm transition-all border
+              \${isBooked ? 'bg-red-700 text-white border-red-800 cursor-not-allowed shadow-inner opacity-80' : ''}
+              \${isSelected ? 'bg-green-500 text-white border-green-600 shadow-lg scale-105 z-10' : ''}
+              \${!isBooked && !isSelected && isFemale ? 'bg-pink-400 text-white border-pink-500 hover:bg-pink-500' : ''}
+              \${!isBooked && !isSelected && isSenior ? 'bg-orange-400 text-white border-orange-500 hover:bg-orange-500' : ''}
+              \${!isBooked && !isSelected && !isFemale && !isSenior ? 'bg-white hover:bg-blue-50 text-gray-700 border-gray-300 hover:border-blue-400' : ''}
             `}
           >
             {seatNumber}
@@ -267,6 +276,11 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
           <p className="text-gray-500">Your ticket has been generated and confirmed.</p>
         </div>
         
+        {/* Hidden ticket for background PDF generation if modal is closed */}
+        <div className="hidden">
+           <TicketCard booking={lastBooking} />
+        </div>
+
         <div className="flex flex-col gap-4 w-full max-w-sm">
           <Dialog open={showTicket} onOpenChange={setShowTicket}>
             <DialogTrigger asChild>
@@ -276,18 +290,21 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md p-0 overflow-hidden bg-transparent border-none">
-              <div className="bg-white rounded-xl overflow-hidden">
+              <div className="bg-white rounded-xl overflow-hidden shadow-2xl">
                 <DialogHeader className="p-4 bg-indigo-600 text-white text-left">
                   <DialogTitle className="flex items-center space-x-2">
                     <Ticket className="w-5 h-5" />
                     <span>Your E-Ticket</span>
                   </DialogTitle>
+                  <DialogDescription className="text-indigo-100 text-xs">
+                    Show this ticket during boarding.
+                  </DialogDescription>
                 </DialogHeader>
-                <div className="p-4 bg-gray-100">
+                <div className="p-4 bg-gray-100 max-h-[70vh] overflow-y-auto">
                   <TicketCard booking={lastBooking} />
                 </div>
-                <div className="p-4 flex gap-3">
-                  <Button onClick={downloadTicketPDF} className="flex-1 bg-blue-600">
+                <div className="p-4 bg-white border-t flex gap-3">
+                  <Button onClick={downloadTicketPDF} className="flex-1 bg-blue-600 hover:bg-blue-700">
                     <Download className="w-4 h-4 mr-2" />
                     Download PDF
                   </Button>
@@ -299,7 +316,7 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
           <Button 
             onClick={downloadTicketPDF}
             variant="outline"
-            className="w-full h-12 border-2 border-blue-100 hover:bg-blue-50 text-blue-700 flex items-center justify-center space-x-2"
+            className="w-full h-12 border-2 border-blue-200 hover:bg-blue-50 text-blue-700 flex items-center justify-center space-x-2 font-bold"
           >
             <Download className="w-5 h-5" />
             <span>Download Ticket</span>
@@ -338,12 +355,12 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Seat Layout */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Your Seats</CardTitle>
-              <p className="text-sm text-gray-600">{bus.name} - {bus.source} to {bus.destination}</p>
+          <Card className="border-2 shadow-md">
+            <CardHeader className="bg-gray-50 border-b">
+              <CardTitle className="text-blue-900">Select Your Seats</CardTitle>
+              <p className="text-sm text-gray-600 font-medium">{bus.name} • {bus.source} to {bus.destination}</p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               {loading ? (
                 <div className="text-center py-12">
                   <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -351,35 +368,45 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
               ) : (
                 <div>
                   {/* Legend */}
-                  <div className="flex flex-wrap items-center justify-center gap-6 mb-6 pb-4 border-b">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-gray-100 rounded"></div>
-                      <span className="text-sm text-gray-600">Available</span>
+                  <div className="flex flex-wrap items-center justify-center gap-4 mb-8 pb-4 border-b">
+                    <div className="flex items-center space-x-2 px-3 py-1 bg-gray-50 rounded-full border">
+                      <div className="w-4 h-4 bg-white border border-gray-300 rounded"></div>
+                      <span className="text-xs text-gray-600 font-medium">Available</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-green-500 rounded-bottom"></div>
-                      <span className="text-sm text-gray-600">Selected</span>
+                    <div className="flex items-center space-x-2 px-3 py-1 bg-green-50 rounded-full border border-green-200">
+                      <div className="w-4 h-4 bg-green-500 rounded"></div>
+                      <span className="text-xs text-gray-600 font-medium">Selected</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-red-700 rounded"></div>
-                      <span className="text-sm text-gray-600">Booked</span>
+                    <div className="flex items-center space-x-2 px-3 py-1 bg-red-50 rounded-full border border-red-200">
+                      <div className="w-4 h-4 bg-red-700 rounded"></div>
+                      <span className="text-xs text-gray-600 font-medium">Booked</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-pink-400 rounded"></div>
-                      <span className="text-sm text-gray-600">Female</span>
+                    <div className="flex items-center space-x-2 px-3 py-1 bg-pink-50 rounded-full border border-pink-200">
+                      <div className="w-4 h-4 bg-pink-400 rounded"></div>
+                      <span className="text-xs text-gray-600 font-medium">Female</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-orange-400 rounded"></div>
-                      <span className="text-sm text-gray-600">Senior</span>
+                    <div className="flex items-center space-x-2 px-3 py-1 bg-orange-50 rounded-full border border-orange-200">
+                      <div className="w-4 h-4 bg-orange-400 rounded"></div>
+                      <span className="text-xs text-gray-600 font-medium">Senior</span>
                     </div>
                   </div>
 
                   {/* Seats Grid */}
-                  <div className="space-y-3 bg-gradient-to-b from-blue-50 to-white p-6 rounded-lg">
-                    <div className="text-center mb-4 pb-2 border-b">
-                      <span className="text-sm font-medium text-gray-500">Driver</span>
+                  <div className="max-w-xs mx-auto space-y-4 bg-white border-2 border-gray-200 p-8 rounded-3xl shadow-inner relative">
+                    {/* Bus Front Styling */}
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-24 h-4 bg-gray-200 rounded-t-xl"></div>
+                    <div className="text-center mb-6 pb-2 border-b-2 border-dashed flex justify-center items-center space-x-2">
+                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border">
+                          <div className="w-4 h-4 border-2 border-gray-400 rounded-full"></div>
+                       </div>
+                       <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Driver Section</span>
                     </div>
-                    {renderSeats()}
+                    <div className="space-y-4">
+                      {renderSeats()}
+                    </div>
+                    <div className="mt-8 pt-4 border-t-2 border-dashed text-center">
+                       <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Rear Entrance</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -389,105 +416,130 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
 
         {/* Booking Summary */}
         <div>
-          <Card className="sticky top-4">
-            <CardHeader>
-              <CardTitle>Booking Summary</CardTitle>
+          <Card className="sticky top-4 border-2 shadow-md">
+            <CardHeader className="bg-gray-50 border-b">
+              <CardTitle className="text-blue-900">Booking Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-6">
               <div>
-                <Label>Journey Date</Label>
-                <Input
-                  type="date"
-                  value={journeyDate}
-                  onChange={(e) => setJourneyDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                />
+                <Label className="text-gray-700 font-bold mb-2 block">Journey Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    type="date"
+                    className="pl-10"
+                    value={journeyDate}
+                    onChange={(e) => setJourneyDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-6 pt-4">
-                {passengerDetails.map((passenger, index) => (
-                  <div key={passenger.seat_no} className="p-4 border rounded-lg bg-gray-50 space-y-4">
-                    <p className="font-bold text-purple-900 border-b pb-2">
-                      Passenger {index + 1} (Seat: {passenger.seat_no})
-                    </p>
-                    
-                    <div>
-                      <Label>Name</Label>
-                      <Input
-                        value={passenger.name}
-                        onChange={(e) => handlePassengerChange(index, 'name', e.target.value)}
-                        placeholder="Enter name"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Age</Label>
-                        <Input
-                          type="number"
-                          value={passenger.age}
-                          onChange={(e) => handlePassengerChange(index, 'age', e.target.value)}
-                          placeholder="Age"
-                        />
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {passengerDetails.length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed rounded-xl bg-gray-50">
+                    <p className="text-sm text-gray-500">Please select seats to add passenger details</p>
+                  </div>
+                ) : (
+                  passengerDetails.map((passenger, index) => (
+                    <div key={passenger.seat_no} className="p-4 border-2 rounded-xl bg-white space-y-4 shadow-sm">
+                      <div className="flex justify-between items-center border-b pb-2">
+                        <p className="font-black text-blue-900 text-sm">
+                          PASSENGER {index + 1}
+                        </p>
+                        <span className="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold">
+                          SEAT {passenger.seat_no}
+                        </span>
                       </div>
-                      <div>
-                        <Label>Gender</Label>
-                        <div className="flex items-center space-x-4 pt-2">
-                          <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`gender-\${passenger.seat_no}`}
-                              value="Male"
-                              checked={passenger.gender === 'Male'}
-                              onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
-                              className="text-blue-600 focus:ring-blue-500"
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs font-bold text-gray-500 uppercase">Full Name</Label>
+                          <Input
+                            value={passenger.name}
+                            className="h-9 text-sm"
+                            onChange={(e) => handlePassengerChange(index, 'name', e.target.value)}
+                            placeholder="Enter name"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-xs font-bold text-gray-500 uppercase">Age</Label>
+                            <Input
+                              type="number"
+                              className="h-9 text-sm"
+                              value={passenger.age}
+                              onChange={(e) => handlePassengerChange(index, 'age', e.target.value)}
+                              placeholder="Age"
                             />
-                            <span className="text-sm">Male</span>
-                          </label>
-                          <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`gender-\${passenger.seat_no}`}
-                              value="Female"
-                              checked={passenger.gender === 'Female'}
-                              onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
-                              className="text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm">Female</span>
-                          </label>
+                          </div>
+                          <div>
+                            <Label className="text-xs font-bold text-gray-500 uppercase">Gender</Label>
+                            <div className="flex items-center space-x-3 pt-1">
+                              <label className="flex items-center space-x-1 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`gender-\${passenger.seat_no}`}
+                                  value="Male"
+                                  checked={passenger.gender === 'Male'}
+                                  onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
+                                  className="w-3 h-3 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs font-medium">Male</span>
+                              </label>
+                              <label className="flex items-center space-x-1 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`gender-\${passenger.seat_no}`}
+                                  value="Female"
+                                  checked={passenger.gender === 'Female'}
+                                  onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
+                                  className="w-3 h-3 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs font-medium">Female</span>
+                              </label>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
-              <div className="pt-4 border-t space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Selected Seats:</span>
-                  <span className="font-medium">
-                    {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}
+              <div className="pt-4 border-t-2 border-dashed space-y-3">
+                <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  <span>Selected Seats</span>
+                  <span className="text-blue-600">
+                    {selectedSeats.length > 0 ? selectedSeats.sort((a,b) => a-b).join(', ') : 'None'}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Price per seat:</span>
-                  <span className="font-medium">₹{bus.price}</span>
+                <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  <span>Base Fare</span>
+                  <span className="text-gray-900">₹{bus.price} x {selectedSeats.length}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                  <span>Total Amount:</span>
+                <div className="flex justify-between text-xl font-black pt-4 border-t-2">
+                  <span className="text-gray-900">TOTAL</span>
                   <span className="text-blue-600">₹{bus.price * selectedSeats.length}</span>
                 </div>
-                <div className="text-xs text-gray-500">
-                  Wallet Balance: ₹{profile.wallet_balance?.toFixed(2)}
+                <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg border border-blue-100">
+                  <span className="text-[10px] font-bold text-blue-700 uppercase">Wallet Balance</span>
+                  <span className="text-sm font-black text-blue-900">₹{profile.wallet_balance?.toFixed(2)}</span>
                 </div>
               </div>
 
               <Button
                 onClick={handleBooking}
                 disabled={booking || selectedSeats.length === 0}
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-lg font-black shadow-lg shadow-blue-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                {booking ? 'Booking...' : 'Confirm Booking'}
+                {booking ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Processing...</span>
+                  </div>
+                ) : 'CONFIRM BOOKING'}
               </Button>
             </CardContent>
           </Card>
