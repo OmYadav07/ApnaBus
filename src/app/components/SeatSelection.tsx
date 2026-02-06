@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -65,6 +65,8 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
     });
   };
 
+  const [lastBooking, setLastBooking] = useState<any>(null);
+
   const handleBooking = async () => {
     if (selectedSeats.length === 0) {
       toast.error('Please select at least one seat');
@@ -85,7 +87,7 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
 
     setBooking(true);
     try {
-      await apiCall('/bookings', {
+      const result = await apiCall('/bookings', {
         method: 'POST',
         body: JSON.stringify({
           bus_id: bus.id,
@@ -95,14 +97,72 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
         }),
       });
 
+      setLastBooking({ ...result.booking, bus });
       toast.success('Booking successful!');
-      onBack();
     } catch (error: any) {
       toast.error(error.message || 'Booking failed');
     } finally {
       setBooking(false);
     }
   };
+
+  const downloadTicket = (booking: any) => {
+    const ticketContent = `
+      APNABUS TICKET
+      ----------------
+      Booking ID: #${booking.id}
+      Bus: ${booking.bus.name}
+      Route: ${booking.bus.source} to ${booking.bus.destination}
+      Date: ${new Date(booking.journeyDate || booking.journey_date).toLocaleDateString()}
+      Seats: ${booking.seats.join(', ')}
+      Total Amount: ₹${booking.totalAmount || booking.total_amount}
+      
+      Passenger Details:
+      ${(booking.passengerDetails || booking.passenger_details).map((p: any, i: number) => 
+        `${i+1}. ${p.name} (Age: ${p.age}, Gender: ${p.gender}, Seat: ${p.seat_no})`
+      ).join('\n')}
+    `;
+    
+    const blob = new Blob([ticketContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ticket-${booking.id}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Ticket downloaded successfully!');
+  };
+
+  if (lastBooking) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+          <Check className="w-10 h-10 text-green-600" />
+        </div>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Booking Confirmed!</h2>
+          <p className="text-gray-500">Your trip to {lastBooking.bus.destination} is all set.</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+          <Button 
+            className="flex-1 bg-blue-600"
+            onClick={() => downloadTicket(lastBooking)}
+          >
+            Download Ticket
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={onBack}
+          >
+            Back to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const renderSeats = () => {
     const totalSeatsCount = bus.totalSeats || bus.total_seats || 40;
