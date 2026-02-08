@@ -356,6 +356,82 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.post("/api/bookings/:id/cancel-passenger", authenticateToken, async (req: any, res) => {
+    try {
+      const bookingId = parseInt(req.params.id);
+      const { seat_no } = req.body;
+      const booking = await storage.getBooking(bookingId);
+
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      const user = await storage.getUser(req.user.id);
+      if (booking.userId !== req.user.id && user?.role !== "admin") {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      if (booking.status === "cancelled") {
+        return res.status(400).json({ error: "Booking is already cancelled" });
+      }
+
+      const seats = Array.isArray(booking.seats) ? [...booking.seats] : [];
+      const passengerDetails = Array.isArray(booking.passengerDetails || booking.passenger_details) 
+        ? [...(booking.passengerDetails || booking.passenger_details)] 
+        : [];
+
+      if (!seats.includes(seat_no)) {
+        return res.status(400).json({ error: "Seat not found in this booking" });
+      }
+
+      if (seats.length <= 1) {
+        // If it's the last seat, cancel the whole booking
+        const updatedBooking = await storage.updateBooking(bookingId, {
+          status: "cancelled",
+          cancelledAt: new Date(),
+        });
+
+        await storage.updateUserWallet(booking.userId, booking.totalAmount);
+        await storage.createWalletTransaction({
+          userId: booking.userId,
+          amount: booking.totalAmount,
+          type: "credit",
+          description: `Refund for cancelled booking #${bookingId}`,
+        });
+
+        return res.json({ success: true, booking: updatedBooking, message: "Last seat cancelled, booking fully cancelled" });
+      }
+
+      // Partial cancellation
+      const bus = await storage.getBus(booking.busId);
+      if (!bus) return res.status(404).json({ error: "Bus not found" });
+
+      const newSeats = seats.filter(s => s !== seat_no);
+      const newPassengerDetails = passengerDetails.filter(p => p.seat_no !== seat_no);
+      const refundAmount = bus.price;
+      const newTotalAmount = booking.totalAmount - refundAmount;
+
+      const updatedBooking = await storage.updateBooking(bookingId, {
+        seats: newSeats,
+        passengerDetails: newPassengerDetails,
+        totalAmount: newTotalAmount,
+      });
+
+      await storage.updateUserWallet(booking.userId, refundAmount);
+      await storage.createWalletTransaction({
+        userId: booking.userId,
+        amount: refundAmount,
+        type: "credit",
+        description: `Partial refund for seat ${seat_no} in booking #${bookingId}`,
+      });
+
+      res.json({ success: true, booking: updatedBooking });
+    } catch (error: any) {
+      console.error("Cancel passenger error:", error);
+      res.status(500).json({ error: "Failed to cancel passenger" });
+    }
+  });
+
   app.post("/api/bookings/:id/cancel", authenticateToken, async (req: any, res) => {
     try {
       const bookingId = parseInt(req.params.id);

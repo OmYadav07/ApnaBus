@@ -39,6 +39,23 @@ export function AdminBookings() {
     }
   };
 
+  const handleCancelPassenger = async (bookingId: string, seatNo: number) => {
+    if (!confirm(`Cancel ticket for seat ${seatNo}?`)) return;
+
+    try {
+      await apiCall(`/bookings/${bookingId}/cancel-passenger`, {
+        method: 'POST',
+        body: JSON.stringify({ seat_no: seatNo })
+      });
+      toast.success(`Seat ${seatNo} cancelled successfully`);
+      fetchBookings();
+      // Close dialog after cancellation
+      setSelectedBooking(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to cancel passenger');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -139,11 +156,24 @@ export function AdminBookings() {
                         <span>Gender: {p.gender || 'N/A'}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500 uppercase">Seat</p>
-                      <p className="text-lg font-bold text-blue-600">
-                        {p.seat_no || (selectedBooking?.seats && selectedBooking.seats[idx]) || 'N/A'}
-                      </p>
+                    <div className="text-right flex flex-col items-end space-y-2">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Seat</p>
+                        <p className="text-lg font-bold text-blue-600">
+                          {p.seat_no || (selectedBooking?.seats && selectedBooking.seats[idx]) || 'N/A'}
+                        </p>
+                      </div>
+                      {selectedBooking?.status === 'booked' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                          onClick={() => handleCancelPassenger(selectedBooking.id, p.seat_no || selectedBooking.seats[idx])}
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Cancel Seat
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))
