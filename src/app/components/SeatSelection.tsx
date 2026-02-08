@@ -238,12 +238,12 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
             onClick={() => toggleSeat(seatNumber)}
             disabled={isBooked}
             className={`
-              w-12 h-12 rounded-lg font-semibold text-sm transition-all border
-              \${isBooked ? 'bg-red-700 text-white border-red-800 cursor-not-allowed shadow-inner opacity-80' : ''}
-              \${isSelected ? 'bg-green-500 text-white border-green-600 shadow-lg scale-105 z-10' : ''}
-              \${!isBooked && !isSelected && isFemale ? 'bg-pink-400 text-white border-pink-500 hover:bg-pink-500' : ''}
-              \${!isBooked && !isSelected && isSenior ? 'bg-orange-400 text-white border-orange-500 hover:bg-orange-500' : ''}
-              \${!isBooked && !isSelected && !isFemale && !isSenior ? 'bg-white hover:bg-blue-50 text-gray-700 border-gray-300 hover:border-blue-400' : ''}
+              w-12 h-12 rounded-lg font-semibold text-sm transition-all
+              ${isBooked ? 'bg-red-700 text-white cursor-not-allowed shadow-inner' : ''}
+              ${isSelected ? 'bg-green-500 text-white shadow-lg scale-105' : ''}
+              ${!isBooked && !isSelected && isFemale ? 'bg-pink-400 text-white hover:bg-pink-500' : ''}
+              ${!isBooked && !isSelected && isSenior ? 'bg-orange-400 text-white hover:bg-orange-500' : ''}
+              ${!isBooked && !isSelected && !isFemale && !isSenior ? 'bg-gray-100 hover:bg-blue-100 text-gray-700' : ''}
             `}
           >
             {seatNumber}
@@ -392,21 +392,11 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
                   </div>
 
                   {/* Seats Grid */}
-                  <div className="max-w-xs mx-auto space-y-4 bg-white border-2 border-gray-200 p-8 rounded-3xl shadow-inner relative">
-                    {/* Bus Front Styling */}
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-24 h-4 bg-gray-200 rounded-t-xl"></div>
-                    <div className="text-center mb-6 pb-2 border-b-2 border-dashed flex justify-center items-center space-x-2">
-                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border">
-                          <div className="w-4 h-4 border-2 border-gray-400 rounded-full"></div>
-                       </div>
-                       <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Driver Section</span>
+                  <div className="space-y-3 bg-gradient-to-b from-blue-50 to-white p-6 rounded-lg">
+                    <div className="text-center mb-4 pb-2 border-b">
+                      <span className="text-sm font-medium text-gray-500">Driver</span>
                     </div>
-                    <div className="space-y-4">
-                      {renderSeats()}
-                    </div>
-                    <div className="mt-8 pt-4 border-t-2 border-dashed text-center">
-                       <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Rear Entrance</span>
-                    </div>
+                    {renderSeats()}
                   </div>
                 </div>
               )}
