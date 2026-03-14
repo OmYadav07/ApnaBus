@@ -59,31 +59,6 @@ export function BookingHistory({ profile }: BookingHistoryProps) {
 
   return (
     <div className="space-y-4">
-      {/* User Info Card */}
-      <Card className="border-blue-100 bg-blue-50/50">
-        <CardContent className="p-5">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <User className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-1">
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-bold">Name</p>
-                <p className="font-semibold text-gray-900">{profile?.name || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-bold">Email</p>
-                <p className="font-semibold text-gray-900">{profile?.email || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-bold">Wallet Balance</p>
-                <p className="font-semibold text-green-700">₹{profile?.wallet_balance?.toFixed(2) || '0.00'}</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
