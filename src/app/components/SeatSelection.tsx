@@ -14,9 +14,10 @@ interface SeatSelectionProps {
   bus: any;
   profile: any;
   onBack: () => void;
+  onBookingSuccess?: () => void;
 }
 
-export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
+export function SeatSelection({ bus, profile, onBack, onBookingSuccess }: SeatSelectionProps) {
   const [bookedSeats, setBookedSeats] = useState<number[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
   const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
@@ -103,6 +104,7 @@ export function SeatSelection({ bus, profile, onBack }: SeatSelectionProps) {
 
       setLastBooking({ ...result.booking, bus });
       toast.success('Booking successful!');
+      if (onBookingSuccess) onBookingSuccess();
     } catch (error: any) {
       toast.error(error.message || 'Booking failed');
     } finally {

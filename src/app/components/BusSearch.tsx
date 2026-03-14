@@ -10,9 +10,10 @@ import { SeatSelection } from './SeatSelection';
 
 interface BusSearchProps {
   profile: any;
+  onBookingSuccess?: () => void;
 }
 
-export function BusSearch({ profile }: BusSearchProps) {
+export function BusSearch({ profile, onBookingSuccess }: BusSearchProps) {
   const navigate = useNavigate();
   const [buses, setBuses] = useState<any[]>([]);
   const [filteredBuses, setFilteredBuses] = useState<any[]>([]);
@@ -53,7 +54,8 @@ export function BusSearch({ profile }: BusSearchProps) {
       <SeatSelection 
         bus={selectedBus} 
         profile={profile}
-        onBack={() => setSelectedBus(null)} 
+        onBack={() => setSelectedBus(null)}
+        onBookingSuccess={onBookingSuccess}
       />
     );
   }

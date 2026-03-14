@@ -26,9 +26,10 @@ import { SupportCenter } from './SupportCenter';
 interface UserDashboardProps {
   profile: any;
   onLogout: () => void;
+  onWalletUpdate?: () => void;
 }
 
-export function UserDashboard({ profile, onLogout }: UserDashboardProps) {
+export function UserDashboard({ profile, onLogout, onWalletUpdate }: UserDashboardProps) {
   const [activeTab, setActiveTab] = useState('search');
 
   return (
@@ -95,7 +96,7 @@ export function UserDashboard({ profile, onLogout }: UserDashboardProps) {
           </TabsList>
 
           <TabsContent value="search">
-            <BusSearch profile={profile} />
+            <BusSearch profile={profile} onBookingSuccess={onWalletUpdate} />
           </TabsContent>
 
           <TabsContent value="bookings">

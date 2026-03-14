@@ -121,7 +121,7 @@ export default function App() {
               profile?.role === "admin" ? (
                 <AdminDashboard profile={profile} onLogout={handleLogout} />
               ) : (
-                <UserDashboard profile={profile} onLogout={handleLogout} />
+                <UserDashboard profile={profile} onLogout={handleLogout} onWalletUpdate={refreshProfile} />
               )
             ) : <Navigate to="/login" />
           } />
