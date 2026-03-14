@@ -175,16 +175,16 @@ export function BusSearch({ profile }: BusSearchProps) {
                       <div className="flex items-center space-x-2 text-gray-600">
                         <Clock className="w-4 h-4" />
                         <div>
-                          <p className="text-xs text-gray-500">Departure</p>
-                          <p className="font-medium">{bus.departureTime || bus.departure_time || 'N/A'}</p>
+                          <p className="text-xs text-gray-500">Arrival</p>
+                          <p className="font-medium">{bus.arrivalTime || bus.arrival_time || 'N/A'}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center space-x-2 text-gray-600">
                         <Clock className="w-4 h-4" />
                         <div>
-                          <p className="text-xs text-gray-500">Arrival</p>
-                          <p className="font-medium">{bus.arrivalTime || bus.arrival_time || 'N/A'}</p>
+                          <p className="text-xs text-gray-500">Departure</p>
+                          <p className="font-medium">{bus.departureTime || bus.departure_time || 'N/A'}</p>
                         </div>
                       </div>
                       
