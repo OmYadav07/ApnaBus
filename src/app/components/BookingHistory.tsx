@@ -127,15 +127,15 @@ export function BookingHistory({ profile }: BookingHistoryProps) {
                     <div className="flex items-center space-x-2 text-gray-600">
                       <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-400">Departure</p>
-                        <p className="font-medium">{booking.bus?.departureTime || booking.bus?.departure_time || 'N/A'}</p>
+                        <p className="text-xs text-gray-400">Arrival</p>
+                        <p className="font-medium">{booking.bus?.arrivalTime || booking.bus?.arrival_time || 'N/A'}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
                       <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-400">Arrival</p>
-                        <p className="font-medium">{booking.bus?.arrivalTime || booking.bus?.arrival_time || 'N/A'}</p>
+                        <p className="text-xs text-gray-400">Departure</p>
+                        <p className="font-medium">{booking.bus?.departureTime || booking.bus?.departure_time || 'N/A'}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
