@@ -109,7 +109,7 @@ export function BookingHistory({ profile }: BookingHistoryProps) {
                   </div>
 
                   {/* Journey details */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm mb-4 p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-2 text-gray-600">
                       <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
                       <div>
@@ -129,6 +129,13 @@ export function BookingHistory({ profile }: BookingHistoryProps) {
                       <div>
                         <p className="text-xs text-gray-400">Departure</p>
                         <p className="font-medium">{booking.bus?.departureTime || booking.bus?.departure_time || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-400">Arrival</p>
+                        <p className="font-medium">{booking.bus?.arrivalTime || booking.bus?.arrival_time || 'N/A'}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
