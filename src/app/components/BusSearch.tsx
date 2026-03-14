@@ -155,7 +155,7 @@ export function BusSearch({ profile }: BusSearchProps) {
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{bus.name}</h3>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                       <div className="flex items-center space-x-2 text-gray-600">
                         <MapPin className="w-4 h-4" />
                         <div>
@@ -176,7 +176,15 @@ export function BusSearch({ profile }: BusSearchProps) {
                         <Clock className="w-4 h-4" />
                         <div>
                           <p className="text-xs text-gray-500">Departure</p>
-                          <p className="font-medium">{bus.departure_time || 'N/A'}</p>
+                          <p className="font-medium">{bus.departureTime || bus.departure_time || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        <div>
+                          <p className="text-xs text-gray-500">Arrival</p>
+                          <p className="font-medium">{bus.arrivalTime || bus.arrival_time || 'N/A'}</p>
                         </div>
                       </div>
                       
@@ -184,7 +192,7 @@ export function BusSearch({ profile }: BusSearchProps) {
                         <Users className="w-4 h-4" />
                         <div>
                           <p className="text-xs text-gray-500">Seats</p>
-                          <p className="font-medium">{bus.total_seats} seats</p>
+                          <p className="font-medium">{bus.totalSeats || bus.total_seats} seats</p>
                         </div>
                       </div>
                     </div>
