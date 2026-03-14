@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { Search, MapPin, Calendar, Clock, IndianRupee, Users, Bus } from 'lucide-react';
+import { Search, MapPin, Calendar, Clock, IndianRupee, Users, Bus, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -12,11 +13,13 @@ interface BusSearchProps {
 }
 
 export function BusSearch({ profile }: BusSearchProps) {
+  const navigate = useNavigate();
   const [buses, setBuses] = useState<any[]>([]);
   const [filteredBuses, setFilteredBuses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
+  const [date, setDate] = useState('');
   const [selectedBus, setSelectedBus] = useState<any>(null);
 
   useEffect(() => {
@@ -57,6 +60,18 @@ export function BusSearch({ profile }: BusSearchProps) {
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <div>
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 pl-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Home</span>
+        </Button>
+      </div>
+
       {/* Search Card */}
       <Card>
         <CardHeader>
@@ -67,7 +82,7 @@ export function BusSearch({ profile }: BusSearchProps) {
           <CardDescription>Find the perfect bus for your journey</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">From</label>
               <div className="relative">
@@ -90,6 +105,20 @@ export function BusSearch({ profile }: BusSearchProps) {
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="pl-10"
+                  min={new Date().toISOString().split('T')[0]}
                 />
               </div>
             </div>
