@@ -26,7 +26,7 @@ export function SupportCenter({ profile }: SupportCenterProps) {
 
   const fetchTickets = async () => {
     try {
-      const data = await apiCall('/support');
+      const data = await apiCall('/support/tickets');
       setTickets(data.tickets || []);
     } catch (error) {
       toast.error('Failed to load support tickets');
@@ -44,7 +44,7 @@ export function SupportCenter({ profile }: SupportCenterProps) {
 
     setSubmitting(true);
     try {
-      await apiCall('/support', {
+      await apiCall('/support/tickets', {
         method: 'POST',
         body: JSON.stringify({ subject, message }),
       });
@@ -132,7 +132,7 @@ export function SupportCenter({ profile }: SupportCenterProps) {
                   </div>
                   <p className="text-sm text-gray-600 mb-2">{ticket.message}</p>
                   <p className="text-xs text-gray-500">
-                    {new Date(ticket.created_at).toLocaleString()}
+                    {new Date(ticket.createdAt || ticket.created_at).toLocaleString('en-IN')}
                   </p>
                 </div>
               ))}
