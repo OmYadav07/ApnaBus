@@ -33,6 +33,10 @@ export function Signup({ onSwitch, onBack, onSignupSuccess }: SignupProps) {
         throw new Error('Please fill in all fields');
       }
 
+      if (formData.phone.length !== 10) {
+        throw new Error('Phone number must be exactly 10 digits');
+      }
+
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters');
       }
@@ -253,20 +257,28 @@ export function Signup({ onSwitch, onBack, onSignupSuccess }: SignupProps) {
                   <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 mb-2 block">
                     Phone Number
                   </Label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Phone className="h-5 w-5 text-gray-400 group-focus-within:text-purple-600 transition-colors" />
+                  <div className="relative group flex">
+                    <div className="flex items-center px-3 h-12 bg-gray-100 border border-r-0 border-gray-200 rounded-l-xl text-gray-600 font-medium text-sm select-none">
+                      <Phone className="h-4 w-4 mr-1.5 text-gray-400" />
+                      +91
                     </div>
                     <Input
                       id="phone"
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="pl-12 h-12 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all rounded-xl"
-                      placeholder="+91 9876543210"
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setFormData({ ...formData, phone: digits });
+                      }}
+                      className="h-12 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all rounded-l-none rounded-r-xl flex-1"
+                      placeholder="9876543210"
+                      maxLength={10}
                       required
                     />
                   </div>
+                  {formData.phone && formData.phone.length < 10 && (
+                    <p className="text-xs text-amber-600 mt-1">{10 - formData.phone.length} more digit{10 - formData.phone.length !== 1 ? 's' : ''} required</p>
+                  )}
                 </div>
 
                 <div>
