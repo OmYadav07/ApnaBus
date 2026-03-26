@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Bus, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Bus, Eye, CalendarDays, Calendar } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -9,12 +9,20 @@ import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { SeatSelection } from './SeatSelection';
 
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_SHORT: Record<string, string> = {
+  Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu',
+  Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun',
+};
+
 export function BusManagement() {
   const [buses, setBuses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [viewBusSeats, setViewBusSeats] = useState<any>(null);
   const [editingBus, setEditingBus] = useState<any>(null);
+  const [scheduleType, setScheduleType] = useState<'everyday' | 'custom'>('everyday');
+  const [scheduleDays, setScheduleDays] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     source: '',
@@ -44,6 +52,9 @@ export function BusManagement() {
         senior_citizen_seats: editingBus.amenities?.senior_citizen_seats?.join(', ') || '',
         female_seats: editingBus.amenities?.female_seats?.join(', ') || '',
       });
+      const sched = editingBus.schedule;
+      setScheduleType(sched?.type === 'custom' ? 'custom' : 'everyday');
+      setScheduleDays(sched?.days || []);
     } else {
       setFormData({
         name: '',
@@ -56,6 +67,8 @@ export function BusManagement() {
         senior_citizen_seats: '',
         female_seats: '',
       });
+      setScheduleType('everyday');
+      setScheduleDays([]);
     }
   }, [editingBus]);
 
@@ -70,8 +83,20 @@ export function BusManagement() {
     }
   };
 
+  const toggleDay = (day: string) => {
+    setScheduleDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (scheduleType === 'custom' && scheduleDays.length === 0) {
+      toast.error('Please select at least one day for the custom schedule');
+      return;
+    }
+
     try {
       const seniorSeats = formData.senior_citizen_seats.split(',').map(s => parseInt(s.trim())).filter(s => !isNaN(s));
       const femaleSeats = formData.female_seats.split(',').map(s => parseInt(s.trim())).filter(s => !isNaN(s));
@@ -83,7 +108,11 @@ export function BusManagement() {
         amenities: {
           senior_citizen_seats: seniorSeats,
           female_seats: femaleSeats,
-        }
+        },
+        schedule: {
+          type: scheduleType,
+          days: scheduleType === 'everyday' ? [] : scheduleDays,
+        },
       };
 
       if (editingBus) {
@@ -118,6 +147,35 @@ export function BusManagement() {
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete bus');
     }
+  };
+
+  const renderScheduleBadge = (bus: any) => {
+    const sched = bus.schedule;
+    if (!sched || sched.type === 'everyday') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs font-semibold">
+          <CalendarDays className="w-3 h-3" />
+          Everyday
+        </span>
+      );
+    }
+    const days: string[] = sched.days || [];
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {DAYS.map((d) => (
+          <span
+            key={d}
+            className={`px-1.5 py-0.5 rounded text-xs font-bold ${
+              days.includes(d)
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-400'
+            }`}
+          >
+            {DAY_SHORT[d]}
+          </span>
+        ))}
+      </div>
+    );
   };
 
   if (viewBusSeats) {
@@ -163,7 +221,7 @@ export function BusManagement() {
                   Add Bus
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingBus ? 'Edit Bus' : 'Add New Bus'}</DialogTitle>
                 </DialogHeader>
@@ -256,6 +314,76 @@ export function BusManagement() {
                       />
                     </div>
                   </div>
+
+                  {/* Travel Schedule */}
+                  <div className="border rounded-xl p-4 space-y-3 bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-blue-600" />
+                      <Label className="text-sm font-semibold text-gray-800 mb-0">Travel Schedule</Label>
+                    </div>
+                    <div className="flex gap-3">
+                      <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        scheduleType === 'everyday'
+                          ? 'border-blue-600 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="scheduleType"
+                          value="everyday"
+                          checked={scheduleType === 'everyday'}
+                          onChange={() => { setScheduleType('everyday'); setScheduleDays([]); }}
+                          className="sr-only"
+                        />
+                        <CalendarDays className="w-4 h-4" />
+                        <span className="font-semibold text-sm">Everyday</span>
+                      </label>
+                      <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        scheduleType === 'custom'
+                          ? 'border-blue-600 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="scheduleType"
+                          value="custom"
+                          checked={scheduleType === 'custom'}
+                          onChange={() => setScheduleType('custom')}
+                          className="sr-only"
+                        />
+                        <Calendar className="w-4 h-4" />
+                        <span className="font-semibold text-sm">Custom Days</span>
+                      </label>
+                    </div>
+
+                    {scheduleType === 'custom' && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-500">Select the days this bus operates:</p>
+                        <div className="grid grid-cols-7 gap-1">
+                          {DAYS.map((day) => (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => toggleDay(day)}
+                              className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                                scheduleDays.includes(day)
+                                  ? 'bg-blue-600 text-white shadow-sm'
+                                  : 'bg-white text-gray-500 border border-gray-200 hover:border-blue-300 hover:text-blue-600'
+                              }`}
+                            >
+                              {DAY_SHORT[day]}
+                            </button>
+                          ))}
+                        </div>
+                        {scheduleDays.length > 0 && (
+                          <p className="text-xs text-blue-600 font-medium">
+                            Selected: {scheduleDays.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <Button type="submit" className="w-full">
                     {editingBus ? 'Update Bus' : 'Add Bus'}
                   </Button>
@@ -339,7 +467,7 @@ export function BusManagement() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t pt-4">
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Arrival</p>
                       <p className="text-base font-semibold text-indigo-600">{bus.arrivalTime || bus.arrival_time || 'N/A'}</p>
@@ -347,6 +475,10 @@ export function BusManagement() {
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Departure</p>
                       <p className="text-base font-semibold text-blue-600">{bus.departureTime || bus.departure_time || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</p>
+                      {renderScheduleBadge(bus)}
                     </div>
                   </div>
                 </div>

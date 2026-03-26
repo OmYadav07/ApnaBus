@@ -23,6 +23,7 @@ export const buses = pgTable("buses", {
   price: integer("price").notNull(),
   totalSeats: integer("total_seats").notNull().default(40),
   amenities: jsonb("amenities"),
+  schedule: jsonb("schedule"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
