@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { formatBookingId } from '../../utils/bookingId';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
 import { Ticket, Calendar, MapPin, IndianRupee, XCircle, User, Clock } from 'lucide-react';
@@ -97,7 +98,7 @@ export function BookingHistory({ profile }: BookingHistoryProps) {
                           {booking.status}
                         </Badge>
                       </div>
-                      <p className="text-xs text-gray-400 font-mono">Booking ID: #{booking.id}</p>
+                      <p className="text-xs text-gray-400 font-mono">Booking ID: {formatBookingId(booking.id, booking.bookingDate || booking.booking_date)}</p>
                     </div>
 
                     <div className="text-right">

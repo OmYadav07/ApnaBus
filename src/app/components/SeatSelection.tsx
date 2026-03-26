@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { formatBookingId } from '../../utils/bookingId';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
 import { ArrowLeft, Check, Ticket, Download, Calendar, Home } from 'lucide-react';
@@ -153,7 +154,7 @@ export function SeatSelection({ bus, profile, onBack, onBookingSuccess }: SeatSe
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500 font-medium">Booking ID</p>
-          <p className="font-mono text-sm font-bold text-gray-900">#{booking.id}</p>
+          <p className="font-mono text-sm font-bold text-gray-900">{formatBookingId(booking.id, booking.bookingDate || booking.booking_date)}</p>
         </div>
       </div>
 

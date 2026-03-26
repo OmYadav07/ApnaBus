@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { formatBookingId } from '../../utils/bookingId';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
 import { Ticket, XCircle, Users } from 'lucide-react';
@@ -135,7 +136,7 @@ export function AdminBookings() {
             <div className="grid grid-cols-2 gap-4 pb-4 border-b">
               <div>
                 <p className="text-xs text-gray-500 uppercase">Booking ID</p>
-                <p className="font-semibold text-purple-900">#{selectedBooking?.id}</p>
+                <p className="font-semibold text-purple-900">{selectedBooking ? formatBookingId(selectedBooking.id, selectedBooking.bookingDate || selectedBooking.booking_date) : '—'}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">Route</p>
