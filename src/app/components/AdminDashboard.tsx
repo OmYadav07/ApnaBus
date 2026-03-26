@@ -13,6 +13,7 @@ import { BusManagement } from './BusManagement';
 import { AdminBookings } from './AdminBookings';
 import { AdminSupport } from './AdminSupport';
 import { AdminStats } from './AdminStats';
+import { BookingsChart } from './BookingsChart';
 
 interface AdminDashboardProps {
   profile: any;
@@ -83,6 +84,7 @@ export function AdminDashboard({ profile, onLogout }: AdminDashboardProps) {
 
           <TabsContent value="dashboard">
             <AdminStats />
+            <BookingsChart />
           </TabsContent>
 
           <TabsContent value="buses">
