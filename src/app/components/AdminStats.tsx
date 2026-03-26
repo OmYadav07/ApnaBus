@@ -28,7 +28,7 @@ export function AdminStats() {
       const activeBookings = bookings.filter((b: any) => b.status === 'booked');
       const revenue = bookings
         .filter((b: any) => b.status === 'booked')
-        .reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0);
+        .reduce((sum: number, b: any) => sum + (b.totalAmount ?? b.total_amount ?? 0), 0);
 
       setStats({
         totalBuses: buses.length,
