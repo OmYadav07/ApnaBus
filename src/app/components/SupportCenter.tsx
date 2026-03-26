@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { HelpCircle, Send, MessageCircle } from 'lucide-react';
+import { HelpCircle, Send, MessageCircle, MessageSquareReply } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -67,7 +67,7 @@ export function SupportCenter({ profile }: SupportCenterProps) {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Send className="w-5 h-5" />
-            <span>Create Support Ticket</span>
+            <span>Create Support Issue</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -107,7 +107,7 @@ export function SupportCenter({ profile }: SupportCenterProps) {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <MessageCircle className="w-5 h-5" />
-            <span>Your Tickets</span>
+            <span>Your Issues</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -123,17 +123,27 @@ export function SupportCenter({ profile }: SupportCenterProps) {
           ) : (
             <div className="space-y-3 max-h-[500px] overflow-y-auto">
               {tickets.map((ticket) => (
-                <div key={ticket.id} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">{ticket.subject}</h4>
-                    <Badge variant={ticket.status === 'open' ? 'default' : 'secondary'}>
-                      {ticket.status}
-                    </Badge>
+                <div key={ticket.id} className="bg-gray-50 rounded-xl overflow-hidden">
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900">{ticket.subject}</h4>
+                      <Badge variant={ticket.status === 'open' ? 'default' : 'secondary'}>
+                        {ticket.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">{ticket.message}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(ticket.createdAt || ticket.created_at).toLocaleString('en-IN')}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{ticket.message}</p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(ticket.createdAt || ticket.created_at).toLocaleString('en-IN')}
-                  </p>
+                  {ticket.adminReply && (
+                    <div className="border-t border-blue-100 bg-blue-50 px-4 py-3">
+                      <p className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <MessageSquareReply className="w-3.5 h-3.5" /> Admin Response
+                      </p>
+                      <p className="text-sm text-gray-800">{ticket.adminReply}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

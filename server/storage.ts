@@ -174,11 +174,40 @@ export class DatabaseStorage implements IStorage {
     return newTransaction;
   }
 
-  async getSupportTickets(userId?: number): Promise<schema.SupportTicket[]> {
-    if (userId) {
-      return db.select().from(schema.supportTickets).where(eq(schema.supportTickets.userId, userId));
-    }
-    return db.select().from(schema.supportTickets);
+  async getSupportTickets(userId?: number): Promise<(schema.SupportTicket & { user?: Pick<schema.User, 'name' | 'email' | 'phone'> | null })[]> {
+    const rows = await db
+      .select({
+        id: schema.supportTickets.id,
+        userId: schema.supportTickets.userId,
+        subject: schema.supportTickets.subject,
+        message: schema.supportTickets.message,
+        status: schema.supportTickets.status,
+        bookmarked: schema.supportTickets.bookmarked,
+        adminReply: schema.supportTickets.adminReply,
+        repliedAt: schema.supportTickets.repliedAt,
+        createdAt: schema.supportTickets.createdAt,
+        resolvedAt: schema.supportTickets.resolvedAt,
+        userName: schema.users.name,
+        userEmail: schema.users.email,
+        userPhone: schema.users.phone,
+      })
+      .from(schema.supportTickets)
+      .leftJoin(schema.users, eq(schema.supportTickets.userId, schema.users.id))
+      .where(userId ? eq(schema.supportTickets.userId, userId) : undefined as any);
+
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      subject: r.subject,
+      message: r.message,
+      status: r.status,
+      bookmarked: r.bookmarked,
+      adminReply: r.adminReply,
+      repliedAt: r.repliedAt,
+      createdAt: r.createdAt,
+      resolvedAt: r.resolvedAt,
+      user: { name: r.userName, email: r.userEmail, phone: r.userPhone },
+    }));
   }
 
   async createSupportTicket(ticket: schema.InsertSupportTicket): Promise<schema.SupportTicket> {

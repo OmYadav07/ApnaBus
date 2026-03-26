@@ -56,6 +56,9 @@ export const supportTickets = pgTable("support_tickets", {
   subject: text("subject").notNull(),
   message: text("message").notNull(),
   status: text("status").notNull().default("open"),
+  bookmarked: boolean("bookmarked").notNull().default(false),
+  adminReply: text("admin_reply"),
+  repliedAt: timestamp("replied_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   resolvedAt: timestamp("resolved_at"),
 });
