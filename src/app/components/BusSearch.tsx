@@ -56,6 +56,7 @@ export function BusSearch({ profile, onBookingSuccess }: BusSearchProps) {
         profile={profile}
         onBack={() => setSelectedBus(null)}
         onBookingSuccess={onBookingSuccess}
+        initialDate={date || undefined}
       />
     );
   }

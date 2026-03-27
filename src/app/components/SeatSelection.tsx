@@ -16,15 +16,16 @@ interface SeatSelectionProps {
   profile: any;
   onBack: () => void;
   onBookingSuccess?: () => void;
+  initialDate?: string;
 }
 
-export function SeatSelection({ bus, profile, onBack, onBookingSuccess }: SeatSelectionProps) {
+export function SeatSelection({ bus, profile, onBack, onBookingSuccess, initialDate }: SeatSelectionProps) {
   const [bookedSeats, setBookedSeats] = useState<number[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
   const [passengerDetails, setPassengerDetails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
-  const [journeyDate, setJourneyDate] = useState(new Date().toISOString().split('T')[0]);
+  const [journeyDate, setJourneyDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
   const [lastBooking, setLastBooking] = useState<any>(null);
   const [showTicket, setShowTicket] = useState(false);
   const ticketRef = useRef<HTMLDivElement>(null);
