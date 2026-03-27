@@ -2,11 +2,46 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { Search, MapPin, Calendar, Clock, IndianRupee, Users, Bus, ArrowLeft } from 'lucide-react';
+import { Search, MapPin, Calendar, Clock, IndianRupee, Users, Bus, ArrowLeft, CalendarDays } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { SeatSelection } from './SeatSelection';
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_SHORT: Record<string, string> = {
+  Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu',
+  Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun',
+};
+
+function ScheduleBadge({ bus }: { bus: any }) {
+  const sched = bus.schedule;
+  if (!sched || sched.type === 'everyday') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs font-semibold">
+        <CalendarDays className="w-3 h-3" />
+        Everyday
+      </span>
+    );
+  }
+  const days: string[] = sched.days || [];
+  return (
+    <div className="flex flex-wrap gap-1">
+      {DAYS.map((d) => (
+        <span
+          key={d}
+          className={`px-1.5 py-0.5 rounded text-xs font-bold ${
+            days.includes(d)
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-300'
+          }`}
+        >
+          {DAY_SHORT[d]}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 interface BusSearchProps {
   profile: any;
@@ -197,6 +232,14 @@ export function BusSearch({ profile, onBookingSuccess }: BusSearchProps) {
                           <p className="text-xs text-gray-500">Seats</p>
                           <p className="font-medium">{bus.totalSeats || bus.total_seats} seats</p>
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <CalendarDays className="w-4 h-4 text-gray-400 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Operates</p>
+                        <ScheduleBadge bus={bus} />
                       </div>
                     </div>
                   </div>
