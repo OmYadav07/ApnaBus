@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   phone: text("phone"),
   role: text("role").notNull().default("user"),
   walletBalance: integer("wallet_balance").notNull().default(0),
+  emailVerified: boolean("email_verified").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

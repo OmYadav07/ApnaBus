@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Bus, Mail, Lock, User, Phone, ArrowLeft, Sparkles, CheckCircle, Shield, Zap } from 'lucide-react';
+import { Bus, Mail, Lock, User, Phone, ArrowLeft, Sparkles, CheckCircle, Shield, Zap, MailCheck, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { authService } from '../../utils/supabase';
+import { authService, apiCall } from '../../utils/supabase';
 
 interface SignupProps {
   onSwitch?: () => void;
@@ -23,6 +23,9 @@ export function Signup({ onSwitch, onBack, onSignupSuccess }: SignupProps) {
     phone: '',
   });
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resending, setResending] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,15 +52,18 @@ export function Signup({ onSwitch, onBack, onSignupSuccess }: SignupProps) {
       );
 
       if (data.success) {
-        toast.success('Account created successfully!');
-        if (onSignupSuccess) {
-          onSignupSuccess(data.user);
+        if (data.requiresVerification) {
+          setRegisteredEmail(formData.email);
+          setVerificationSent(true);
+          toast.success('Account created! Please check your email to verify.');
+        } else {
+          toast.success('Account created successfully!');
+          if (onSignupSuccess) onSignupSuccess(data.user);
+          navigate('/dashboard');
         }
-        navigate('/dashboard');
       }
     } catch (error: any) {
       console.error('Signup error:', error);
-      
       if (error.message.includes('already exists') || error.message.includes('already registered')) {
         toast.error('An account with this email already exists. Please login instead.');
       } else {
@@ -67,6 +73,65 @@ export function Signup({ onSwitch, onBack, onSignupSuccess }: SignupProps) {
       setLoading(false);
     }
   };
+
+  const handleResendEmail = async () => {
+    setResending(true);
+    try {
+      await apiCall('/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+      toast.success('Verification email resent! Check your inbox.');
+    } catch {
+      toast.error('Failed to resend. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  if (verificationSent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center"
+        >
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <MailCheck className="w-10 h-10 text-purple-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+          <p className="text-gray-500 mb-2">We've sent a verification link to:</p>
+          <p className="font-semibold text-purple-600 bg-purple-50 px-4 py-2 rounded-xl mb-6 break-all">{registeredEmail}</p>
+          <p className="text-sm text-gray-500 mb-8">
+            Click the link in the email to verify your account. Once verified, you can log in.
+          </p>
+          <div className="space-y-3">
+            <Button
+              onClick={() => navigate('/login')}
+              className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl"
+            >
+              Go to Login
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleResendEmail}
+              disabled={resending}
+              className="w-full h-12 rounded-xl"
+            >
+              {resending ? (
+                <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Resending...</>
+              ) : (
+                <><Mail className="w-4 h-4 mr-2" /> Resend Verification Email</>
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-400 mt-6">Didn't receive it? Check your spam folder.</p>
+        </motion.div>
+      </div>
+    );
+  }
 
   const benefits = [
     { icon: Zap, text: 'Instant Booking' },

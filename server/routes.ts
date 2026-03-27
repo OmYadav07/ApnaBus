@@ -2,8 +2,13 @@ import type { Express } from "express";
 import { storage } from "./storage";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { createClient } from "@supabase/supabase-js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "bus-booking-secret-key-2024";
+
+const supabaseAdmin = process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY
+  ? createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY)
+  : null;
 
 interface AuthRequest extends Express.Request {
   user?: { id: number; email: string; role: string };
@@ -55,18 +60,54 @@ export function registerRoutes(app: Express) {
         phone,
         role: "user",
         walletBalance: 0,
+        emailVerified: false,
       });
 
-      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+      if (supabaseAdmin) {
+        const { error: supaErr } = await supabaseAdmin.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name, phone },
+          },
+        });
+        if (supaErr) {
+          console.error("Supabase signup error:", supaErr.message);
+        }
+      }
 
       res.json({
         success: true,
+        requiresVerification: true,
         user: { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role, wallet_balance: user.walletBalance },
-        access_token: token,
       });
     } catch (error: any) {
       console.error("Signup error:", error);
       res.status(500).json({ error: "Signup failed" });
+    }
+  });
+
+  app.post("/api/verify-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: "Email is required" });
+
+      if (!supabaseAdmin) {
+        const user = await storage.verifyUserEmail(email);
+        if (!user) return res.status(404).json({ error: "User not found" });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+        return res.json({ success: true, user: { id: user.id, email: user.email, name: user.name, role: user.role, wallet_balance: user.walletBalance }, access_token: token });
+      }
+
+      const { data, error } = await supabaseAdmin.auth.admin.getUserByEmail(email).catch(() => ({ data: null, error: { message: 'admin api unavailable' } }));
+      
+      const user = await storage.verifyUserEmail(email);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+      res.json({ success: true, user: { id: user.id, email: user.email, name: user.name, role: user.role, wallet_balance: user.walletBalance }, access_token: token });
+    } catch (error: any) {
+      console.error("Verify email error:", error);
+      res.status(500).json({ error: "Verification failed" });
     }
   });
 
@@ -82,6 +123,10 @@ export function registerRoutes(app: Express) {
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
         return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      if (!user.emailVerified && user.role !== "admin" && supabaseAdmin) {
+        return res.status(403).json({ error: "Please verify your email before logging in. Check your inbox for a verification link.", requiresVerification: true, email: user.email });
       }
 
       const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
