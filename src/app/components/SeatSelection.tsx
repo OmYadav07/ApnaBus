@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -48,7 +47,6 @@ export function SeatSelection({ bus, profile, onBack, onBookingSuccess, initialD
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [journeyDate, setJourneyDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
-  const [calendarOpen, setCalendarOpen] = useState(false);
   const [lastBooking, setLastBooking] = useState<any>(null);
   const [showTicket, setShowTicket] = useState(false);
   const ticketRef = useRef<HTMLDivElement>(null);
@@ -477,34 +475,26 @@ export function SeatSelection({ bus, profile, onBack, onBookingSuccess, initialD
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div>
-                <Label className="text-gray-700 font-bold mb-2 block">Journey Date</Label>
-                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal pl-3 gap-2"
-                    >
-                      <CalendarIcon className="w-4 h-4 text-gray-400" />
-                      <span className={journeyDate ? 'text-gray-900' : 'text-gray-400'}>
-                        {formatDisplayDate(journeyDate)}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={journeyDate ? parseDateStr(journeyDate) : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          setJourneyDate(formatDateStr(date));
-                          setCalendarOpen(false);
-                        }
-                      }}
-                      disabled={getDisabledDates}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label className="text-gray-700 font-bold mb-2 flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4 text-blue-500" />
+                  Journey Date
+                  {journeyDate && (
+                    <span className="ml-auto text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                      {formatDisplayDate(journeyDate)}
+                    </span>
+                  )}
+                </Label>
+                <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
+                  <Calendar
+                    mode="single"
+                    selected={journeyDate ? parseDateStr(journeyDate) : undefined}
+                    onSelect={(date) => {
+                      if (date) setJourneyDate(formatDateStr(date));
+                    }}
+                    disabled={getDisabledDates}
+                    className="w-full"
+                  />
+                </div>
               </div>
 
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
