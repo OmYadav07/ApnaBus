@@ -2,14 +2,36 @@ import { useState, useEffect, useRef } from 'react';
 import { formatBookingId } from '../../utils/bookingId';
 import { apiCall } from '../../utils/supabase';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Ticket, Download, Calendar, Home } from 'lucide-react';
+import { ArrowLeft, Check, Ticket, Download, Calendar as CalendarIcon, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function parseDateStr(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatDateStr(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return 'Pick a date';
+  const d = parseDateStr(dateStr);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 interface SeatSelectionProps {
   bus: any;
@@ -26,9 +48,35 @@ export function SeatSelection({ bus, profile, onBack, onBookingSuccess, initialD
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [journeyDate, setJourneyDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [lastBooking, setLastBooking] = useState<any>(null);
   const [showTicket, setShowTicket] = useState(false);
   const ticketRef = useRef<HTMLDivElement>(null);
+
+  const getDisabledDates = (date: Date): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (date < today) return true;
+
+    if (date.toDateString() === new Date().toDateString()) {
+      const depTime = bus.departureTime || bus.departure_time;
+      if (depTime) {
+        const [hours, minutes] = depTime.split(':').map(Number);
+        const dep = new Date();
+        dep.setHours(hours, minutes, 0, 0);
+        if (new Date() >= dep) return true;
+      }
+    }
+
+    const sched = bus.schedule;
+    if (sched && sched.type === 'custom' && sched.days?.length > 0) {
+      const dayName = DAY_NAMES[date.getDay()];
+      if (!sched.days.includes(dayName)) return true;
+    }
+
+    return false;
+  };
 
   useEffect(() => {
     fetchSeats();
@@ -180,7 +228,7 @@ export function SeatSelection({ bus, profile, onBack, onBookingSuccess, initialD
           <div>
             <p className="text-gray-500 font-medium mb-1">JOURNEY DATE</p>
             <div className="flex items-center space-x-2 font-bold text-gray-900">
-              <Calendar className="w-3 h-3 text-blue-600" />
+              <CalendarIcon className="w-3 h-3 text-blue-600" />
               <span>{new Date(booking.journeyDate || booking.journey_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
             </div>
           </div>
@@ -332,7 +380,7 @@ export function SeatSelection({ bus, profile, onBack, onBookingSuccess, initialD
               className="h-12 flex items-center justify-center space-x-2"
               onClick={() => toast.info('Reschedule feature coming soon!')}
             >
-              <Calendar className="w-4 h-4" />
+              <CalendarIcon className="w-4 h-4" />
               <span>Reschedule</span>
             </Button>
             <Button 
@@ -417,16 +465,33 @@ export function SeatSelection({ bus, profile, onBack, onBookingSuccess, initialD
             <CardContent className="p-6 space-y-6">
               <div>
                 <Label className="text-gray-700 font-bold mb-2 block">Journey Date</Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    type="date"
-                    className="pl-10"
-                    value={journeyDate}
-                    onChange={(e) => setJourneyDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal pl-3 gap-2"
+                    >
+                      <CalendarIcon className="w-4 h-4 text-gray-400" />
+                      <span className={journeyDate ? 'text-gray-900' : 'text-gray-400'}>
+                        {formatDisplayDate(journeyDate)}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={journeyDate ? parseDateStr(journeyDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setJourneyDate(formatDateStr(date));
+                          setCalendarOpen(false);
+                        }
+                      }}
+                      disabled={getDisabledDates}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
