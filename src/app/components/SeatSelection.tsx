@@ -80,6 +80,19 @@ export function SeatSelection({ bus, profile, onBack, onBookingSuccess, initialD
 
   useEffect(() => {
     fetchSeats();
+    // Auto-advance to next valid date if the initial date is not bookable
+    const initial = parseDateStr(journeyDate);
+    if (getDisabledDates(initial)) {
+      const next = new Date(initial);
+      for (let i = 1; i <= 365; i++) {
+        next.setDate(next.getDate() + 1);
+        if (!getDisabledDates(new Date(next))) {
+          setJourneyDate(formatDateStr(new Date(next)));
+          break;
+        }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
